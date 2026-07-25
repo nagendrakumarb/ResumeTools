@@ -1,0 +1,54 @@
+{
+  "providers": [
+    {
+      "name": "TheirStack",
+      "type": "theirstack",
+      "enabled": true,
+      "apiKey": "REPLACE_WITH_THEIRSTACK_API_KEY"
+    },
+    {
+      "name": "SerpApi",
+      "type": "serpapi",
+      "enabled": true,
+      "apiKey": "REPLACE_WITH_SERPAPI_API_KEY"
+    },
+    {
+      "name": "Apify",
+      "type": "generic",
+      "enabled": true,
+      "apiKey": "REPLACE_WITH_APIFY_API_TOKEN",
+      "endpoint": "https://api.apify.com/v2/acts/pryzmlabs~linkedin-jobs-scraper/run-sync-get-dataset-items",
+      "method": "POST",
+      "authentication": "bearer",
+      "body": {
+        "mode": "full",
+        "keywords": "{keyword}",
+        "location": "{location}",
+        "maxResults": 10
+      },
+      "itemsPath": ""
+    },
+    {
+      "name": "RapidAPI",
+      "type": "generic",
+      "enabled": true,
+      "apiKey": "REPLACE_WITH_RAPIDAPI_KEY",
+      "endpoint": "https://linkedin-job-search-api.p.rapidapi.com/active-jb?time_frame={timeFrame}&limit={limit}&description_format=text&source=linkedin&title={keyword}&location={location}",
+      "method": "GET",
+      "authentication": "rapidapi",
+      "host": "linkedin-job-search-api.p.rapidapi.com",
+      "itemsPath": ""
+    },
+    {
+      "name": "Parse.bot",
+      "type": "generic",
+      "enabled": true,
+      "apiKey": "REPLACE_WITH_PARSEBOT_API_KEY",
+      "endpoint": "https://api.parse.bot/scraper/REPLACE_WITH_PARSEBOT_SCRAPER_ID/search_jobs?keyword={keyword}&page_no=1&sort_by=date&location={location}&experience={experience}&date_posted={days}",
+      "method": "GET",
+      "authentication": "api-key",
+      "apiKeyHeader": "X-API-Key",
+      "itemsPath": "data.jobDetails"
+    }
+  ]
+}

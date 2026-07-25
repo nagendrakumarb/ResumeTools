@@ -1,0 +1,37 @@
+<details class="fix-options shared-fix-options" open="@Open">
+    <summary>@Title</summary>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <p>@Description</p>
+    }
+    @if (ShowRecommendationButton)
+    {
+        <button type="button" class="secondary-button" @onclick="EnableRecommended">
+            Enable force flags for unmet safe objectives
+        </button>
+    }
+    <div class="fix-option-grid">
+        <label><input type="checkbox" @bind="Options.AddProfessionalSummaryHeading" /> Standard summary heading</label>
+        <label class="force-option"><input type="checkbox" @bind="Options.ForceProfessionalSummary" disabled="@(!Options.AddProfessionalSummaryHeading)" /> Force evidence-based summary section</label>
+        <label><input type="checkbox" @bind="Options.KeepOnePrimaryPhone" /> Keep one primary phone</label>
+        <label><input type="checkbox" @bind="Options.CompactPageLayout" /> Compact 1–2 page layout</label>
+        <label class="force-option"><input type="checkbox" @bind="Options.ForceCompactPageLayout" disabled="@(!Options.CompactPageLayout)" /> Force safe layout compaction (never remove projects)</label>
+        <label><input type="checkbox" @bind="Options.BalanceBoldUsage" /> Balance bold emphasis</label>
+        <label class="force-option"><input type="checkbox" @bind="Options.ForceBalanceBoldUsage" disabled="@(!Options.BalanceBoldUsage)" /> Force bold balancing while preserving hierarchy</label>
+        <label><input type="checkbox" @bind="Options.RemoveRepeatedContent" /> Remove exact repetition</label>
+        <label><input type="checkbox" @bind="Options.ImproveReadingClarity" /> Improve long-line clarity</label>
+        <label><input type="checkbox" @bind="Options.AddEvidenceBackedStrengths" /> Add evidenced strengths</label>
+        <label class="force-option"><input type="checkbox" @bind="Options.ForceEvidenceBackedStrengths" disabled="@(!Options.AddEvidenceBackedStrengths)" /> Force supported soft-skill coverage</label>
+    </div>
+    @ChildContent
+</details>
+
+@code {
+    [Parameter, EditorRequired] public ResumeFixOptions Options { get; set; } = new();
+    [Parameter] public string Title { get; set; } = "Corrections to apply";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public bool Open { get; set; } = true;
+    [Parameter] public bool ShowRecommendationButton { get; set; }
+    [Parameter] public EventCallback EnableRecommended { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

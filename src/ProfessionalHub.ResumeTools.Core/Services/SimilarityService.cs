@@ -13,7 +13,9 @@ public sealed partial class SimilarityService
         "deliver", "employment", "equal", "including", "job", "notice", "opportunity", "own", "please", "position",
         "provide", "required", "requirement", "requirements", "responsibilities", "role", "team", "work", "working",
         "ability", "accommodation", "age", "citizenship", "disability", "diversity", "equity", "gender", "hundred",
-        "intense", "legally", "origin", "protected", "reasonable", "status", "veteran"
+        "intense", "legally", "origin", "protected", "reasonable", "status", "veteran",
+        "bachelor", "bachelors", "degree", "desired", "equivalent", "implementation", "majorly", "minimum",
+        "typically", "education", "experience", "years", "applications", "development", "release", "testing"
     };
 
     private static readonly string[] RequirementVocabulary =
@@ -83,6 +85,7 @@ public sealed partial class SimilarityService
                            !term.All(char.IsDigit) &&
                            !StopWords.Contains(term))
             .GroupBy(term => term, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() >= 2)
             .OrderByDescending(group => group.Count())
             .ThenByDescending(group => group.Key.Length)
             .Select(group => ToDisplayTerm(group.Key))

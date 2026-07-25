@@ -58,10 +58,20 @@
                         <datalist id="keyword-options">@foreach (var keyword in catalogKeywords) { <option value="@keyword"></option> }</datalist>
                         <details class="filter-checklist">
                             <summary>@SelectionSummary(selectedKeywords, "All configured job titles")</summary>
-                            <div>
-                                @foreach (var keyword in catalogKeywords.Where(FilterKeyword))
+                            <div class="role-groups">
+                                @foreach (var group in catalogRoleGroups)
                                 {
-                                    <label><input type="checkbox" checked="@selectedKeywords.Contains(keyword)" @onchange="args => ToggleValue(selectedKeywords, keyword, args)" />@keyword</label>
+                                    var filteredRoles = group.Roles.Where(FilterKeyword).ToList();
+                                    if (filteredRoles.Count > 0)
+                                    {
+                                        <section class="role-option-group">
+                                            <strong>@group.Name</strong>
+                                            @foreach (var keyword in filteredRoles)
+                                            {
+                                                <label><input type="checkbox" checked="@selectedKeywords.Contains(keyword)" @onchange="args => ToggleValue(selectedKeywords, keyword, args)" />@keyword</label>
+                                            }
+                                        </section>
+                                    }
                                 }
                             </div>
                         </details>
@@ -88,9 +98,9 @@
                 </div>
                 @if (catalogProviderStates.Count > 0)
                 {
-                    <details class="source-override">
-                        <summary>Override automatic sources @if (selectedSources.Count > 0) { <span>(@selectedSources.Count selected)</span> }</summary>
-                        <p>Leave everything unchecked to use automatic round-robin routing.</p>
+                    <details class="source-override" open>
+                        <summary>Job sources <span>(@selectedSources.Count selected)</span></summary>
+                        <p>Select at least one source. Multiple selected sources are searched together; no source is chosen randomly when the list is empty.</p>
                         <div class="source-options">
                             @foreach (var source in catalogProviderStates)
                             {
@@ -105,13 +115,24 @@
                     </details>
                 }
                 <div class="local-provider-config">
-                    <label>
-                        <strong>Live API configuration</strong>
-                        <InputFile OnChange="LoadLocalProviderConfigurationAsync" accept=".json,application/json" />
-                    </label>
+                    <strong>Private API configuration</strong>
+                    <p>Built-in public sources work without this file. Download the template, add your provider credentials locally, then upload it for this browser tab.</p>
+                    <div class="provider-config-actions">
+                        <a class="provider-template-button" href="templates/job-providers.template.json" download="job-providers.json">Download JSON template</a>
+                        <label class="provider-upload-button">
+                            <span>Upload provider JSON</span>
+                            <InputFile OnChange="LoadLocalProviderConfigurationAsync" accept=".json,application/json" />
+                        </label>
+                    </div>
                     <small>@localProviderStatus</small>
                 </div>
                 <small class="catalog-status">@catalogStatus</small>
+                @if (!string.IsNullOrWhiteSpace(liveSearchStatus))
+                {
+                    <small class="catalog-status">
+                        @liveSearchStatus
+                    </small>
+                }
                 <button class="api-search-button" @onclick="SearchJobsAsync" disabled="@(!CanSearchJobs || isBusy)">Search jobs</button>
                 @if (!CanSearchJobs)
                 {
@@ -201,19 +222,16 @@
                 @{ var totalSkills = atsResult.Skills.HardSkills.Count + atsResult.Skills.SoftSkills.Count; var hardShare = totalSkills == 0 ? 0 : Math.Round(atsResult.Skills.HardSkills.Count * 100d / totalSkills); }
                 <div class="group-chart skills-chart"><div class="mini-donut skill-donut" style="--hard:@(hardShare * 3.6)deg"><span>@totalSkills</span></div><strong>Skill mix</strong><small>@atsResult.Skills.HardSkills.Count hard / @atsResult.Skills.SoftSkills.Count soft</small></div>
             </div>
-            <details class="fix-options shared-fix-options" open>
-                <summary>Corrections applied to every download</summary>
-                <p>These selections are used for the fixed original, built-in templates, and uploaded templates.</p>
-                <div class="fix-option-grid">
-                    <label><input type="checkbox" @bind="fixOptions.AddProfessionalSummaryHeading" /> Standard summary heading</label>
-                    <label><input type="checkbox" @bind="fixOptions.KeepOnePrimaryPhone" /> Keep one primary phone</label>
-                    <label><input type="checkbox" @bind="fixOptions.CompactPageLayout" /> Compact 1–2 page layout</label>
-                    <label><input type="checkbox" @bind="fixOptions.BalanceBoldUsage" /> Balance bold emphasis</label>
-                    <label><input type="checkbox" @bind="fixOptions.RemoveRepeatedContent" /> Remove exact repetition</label>
-                    <label><input type="checkbox" @bind="fixOptions.ImproveReadingClarity" /> Improve long-line clarity</label>
-                    <label><input type="checkbox" @bind="fixOptions.AddEvidenceBackedStrengths" /> Add evidenced strengths</label>
-                </div>
-            </details>
+            <ResumeCorrectionOptions Options="fixOptions"
+                                     Title="Corrections applied to every download"
+                                     Description="These selections are used for the fixed original, built-in templates, and uploaded templates."
+                                     ShowRecommendationButton="true"
+                                     EnableRecommended="EnableSafeForceCorrections">
+                <button type="button" class="generate-button" @onclick="ApplySelectedCorrectionsAndRecheckAsync"
+                        disabled="@(resume is null || isBusy)">
+                    Apply selected corrections &amp; recheck ATS
+                </button>
+            </ResumeCorrectionOptions>
             <div class="resume-actions">
                 <div class="output-option fix-output">
                     <h3>@(resume?.FileType == "PDF" ? "Rebuild corrected DOCX" : "Fix original formatting")</h3>
@@ -222,16 +240,7 @@
                     {
                         <p class="format-warning"><strong>Layout warning:</strong> a PDF has fixed drawing instructions, not editable Word formatting. Upload the original DOCX as the resume if the corrected download must retain the exact layout.</p>
                     }
-                    <details class="fix-options" open>
-                        <summary>Corrections to apply</summary>
-                        <label><input type="checkbox" @bind="fixOptions.AddProfessionalSummaryHeading" /> Standard summary heading</label>
-                        <label><input type="checkbox" @bind="fixOptions.KeepOnePrimaryPhone" /> Keep one primary phone</label>
-                        <label><input type="checkbox" @bind="fixOptions.CompactPageLayout" /> Compact 1–2 page layout</label>
-                        <label><input type="checkbox" @bind="fixOptions.BalanceBoldUsage" /> Balance bold emphasis</label>
-                        <label><input type="checkbox" @bind="fixOptions.RemoveRepeatedContent" /> Remove exact repetition</label>
-                        <label><input type="checkbox" @bind="fixOptions.ImproveReadingClarity" /> Improve long-line clarity</label>
-                        <label><input type="checkbox" @bind="fixOptions.AddEvidenceBackedStrengths" /> Add evidenced strengths</label>
-                    </details>
+                    <ResumeCorrectionOptions Options="fixOptions" />
                     <button class="generate-button" @onclick="FixOriginalAsync" disabled="@(resume is null || isBusy)">@(resume?.FileType == "PDF" ? "Download corrected DOCX" : "Download fixed original")</button>
                     @if (resume?.FileType == "PDF") { <small>This action rebuilds the content; it does not preserve the PDF's exact formatting.</small> }
                 </div>
@@ -278,6 +287,11 @@
             <div class="match-generator">
                 <h3>Apply job-match improvements</h3>
                 <p>Selected terms are placed contextually: technologies stay in Skills, professional strengths go in the Summary, and architecture or operational requirements are attached to relevant experience evidence. Select only terms that truthfully describe your work.</p>
+                <ResumeCorrectionOptions Options="fixOptions"
+                                         Title="ATS objectives to apply with job tailoring"
+                                         Description="The same correction engine used by ATS Compatibility is applied to this download."
+                                         ShowRecommendationButton="true"
+                                         EnableRecommended="EnableSafeForceCorrections" />
                 <div class="match-term-options">
                     @foreach (var term in matchResult.MissingTerms)
                     {
@@ -308,7 +322,7 @@
     </section>
 </main>
 
-<AdUnit PublisherId="ca-pub-YOUR_PUBLISHER_ID" Slot="YOUR_AD_SLOT_ID" />
+<AdUnit PublisherId="ca-pub-8487728962349258" Slot="YOUR_AD_SLOT_ID" />
 <section class="trust-copy"><h2>Resume analysis that respects your privacy</h2><p>Resume files are processed locally on your device and are never uploaded. When you import a job URL, only that public URL is sent to the page reader if the website blocks direct browser access.</p></section>
 
 @code {
@@ -320,10 +334,12 @@
     private int jobAgeDays = 30;
     private IReadOnlyList<NormalizedJob> jobResults = [];
     private string catalogStatus = "Loading catalog information...";
-    private string localProviderStatus = "Select your local job-providers.json to enable live API searches for overridden sources.";
+    private string liveSearchStatus = "";
+    private string localProviderStatus = "Public sources need no file. Upload job-providers.json only when selecting a credential-based source.";
     private string? localProviderConfiguration;
     private int catalogJobCount;
     private IReadOnlyList<string> catalogKeywords = [];
+    private IReadOnlyList<JobRoleGroup> catalogRoleGroups = [];
     private IReadOnlyList<string> catalogLocations = [];
     private HashSet<string> selectedKeywords = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> selectedLocations = new(StringComparer.OrdinalIgnoreCase);
@@ -366,29 +382,77 @@
     private bool CanMatch => HasResume && !string.IsNullOrWhiteSpace(jobDescription);
     private bool CanOpenJobUrl => Uri.TryCreate(jobUrl, UriKind.Absolute, out var uri) &&
                                   uri.Scheme is "http" or "https";
-    private bool CanSearchJobs => catalogJobCount > 0;
-    private string JobSearchHint => "";
+    private void EnableSafeForceCorrections()
+    {
+        if (resume is null) return;
+        var analysis = atsResult ?? Ats.Analyze(resume);
+        bool Unmet(string name) => analysis.Checks.Any(check =>
+            check.Name.Equals(name, StringComparison.OrdinalIgnoreCase) && check.Score < 100);
+        fixOptions.ForceCompactPageLayout = fixOptions.CompactPageLayout &&
+                                            (Unmet("Page count") || Unmet("Word count"));
+        fixOptions.ForceBalanceBoldUsage = fixOptions.BalanceBoldUsage && Unmet("Bold usage");
+        fixOptions.ForceProfessionalSummary = fixOptions.AddProfessionalSummaryHeading &&
+                                              Unmet("Professional summary");
+        fixOptions.ForceEvidenceBackedStrengths = fixOptions.AddEvidenceBackedStrengths &&
+                                                  (Unmet("Soft skills") || Unmet("Skills efficiency ratio"));
+    }
+    private bool CanSearchJobs => selectedSources.Count > 0;
+    private string JobSearchHint => selectedSources.Count == 0
+        ? "Select at least one job source before searching."
+        : "";
+    private static readonly string[] DefaultPublicSources =
+        ["Remote OK", "Remotive", "We Work Remotely"];
 
     protected override async Task OnInitializedAsync()
     {
+        JobCatalogInfo? info = null;
+        JobSearchOptions options = new();
         try
         {
-            var info = await JobSearch.GetCatalogInfoAsync();
-            catalogKeywords = info.Keywords;
-            catalogLocations = info.Locations;
-            catalogProviderStates = info.Routing
-                .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(group => group.Last()).OrderBy(x => x.Name).ToList();
-            catalogJobCount = info.JobCount;
-            catalogStatus = info.GeneratedAt is null
-                ? "The catalog has not been generated yet. Rebuild the application or run the catalog collector."
-                : $"{info.JobCount:N0} jobs from {info.Provider}; refreshed {info.GeneratedAt.Value.LocalDateTime:g}.";
+            options = await JobSearch.GetSearchOptionsAsync();
+        }
+        catch { /* Custom entries remain available even if the packaged option list is unavailable. */ }
+
+        try { info = await JobSearch.GetCatalogInfoAsync(); }
+        catch { /* The static catalog is optional for live provider searches. */ }
+
+        catalogRoleGroups = options.RoleGroups.Count > 0
+            ? options.RoleGroups
+            : info is not null && info.Keywords.Count > 0
+                ? [new JobRoleGroup { Name = "Configured roles", Roles = info.Keywords.ToList() }]
+                : [];
+        catalogKeywords = catalogRoleGroups.SelectMany(group => group.Roles)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        catalogLocations = options.Locations.Count > 0
+            ? options.Locations
+            : info?.Locations ?? [];
+        catalogProviderStates = (info?.Routing ?? [])
+            .GroupBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.Last()).OrderBy(x => x.Name).ToList();
+        selectedSources.Clear();
+        foreach (var source in DefaultPublicSources.Where(name =>
+                     catalogProviderStates.Any(state =>
+                         state.Name.Equals(name, StringComparison.OrdinalIgnoreCase))))
+            selectedSources.Add(source);
+
+        catalogJobCount = info?.JobCount ?? 0;
+        catalogStatus = info?.GeneratedAt is not null
+            ? $"{info.JobCount:N0} jobs from {info.Provider}; refreshed {info.GeneratedAt.Value.LocalDateTime:g}."
+            : catalogProviderStates.Count > 0
+                ? "Live job sources are ready. The optional cached catalog is not available."
+                : "Job sources could not be loaded. Refresh the page or verify the deployed data files.";
+
+        try
+        {
             var folderState = await JobApplications.GetStateAsync();
             ApplyFolderState(folderState);
             if (folderState.PermissionGranted)
                 appliedJobFingerprints = new(await JobApplications.LoadFingerprintsAsync(), StringComparer.OrdinalIgnoreCase);
         }
-        catch { catalogStatus = "The static job catalog is not available in this build."; }
+        catch
+        {
+            // Folder permission is independent of job-search configuration.
+        }
     }
     private string MatchHint => !HasResume ? "Choose a resume to continue." : "Import a job URL or paste the description.";
 
@@ -426,7 +490,12 @@
 
     private async Task SearchJobsAsync()
     {
-        isBusy = true; error = null; jobResults = [];
+        if (selectedSources.Count == 0)
+        {
+            error = "Select at least one job source before searching.";
+            return;
+        }
+        isBusy = true; error = null; jobResults = []; liveSearchStatus = "";
         busyTitle = "Searching job providers";
         busyDetail = "Fetching structured listings and normalizing titles, companies, locations, dates, and descriptions...";
         await InvokeAsync(StateHasChanged); await Task.Yield();
@@ -447,9 +516,10 @@
                 requestedLocations.Count == 0 ? "" : string.Join("|||", requestedLocations),
                 jobExperience, jobAgeDays, "", "",
                 selectedSources.Count == 0 ? "All" : string.Join(',', selectedSources));
-            var fetchedJobs = localProviderConfiguration is not null && selectedSources.Count > 0
-                ? await JobSearch.SearchLocalProvidersAsync(localProviderConfiguration, searchRequest, selectedSources)
+            var fetchedJobs = selectedSources.Count > 0
+                ? await JobSearch.SearchConfiguredProvidersAsync(localProviderConfiguration, searchRequest, selectedSources)
                 : await JobSearch.SearchAsync(searchRequest);
+            liveSearchStatus = JobSearch.LastSearchSourceMessage;
             if (jobFolderReady)
                 appliedJobFingerprints = new(await JobApplications.LoadFingerprintsAsync(), StringComparer.OrdinalIgnoreCase);
             var hiddenCount = fetchedJobs.Count(job =>
@@ -675,7 +745,17 @@
         if (value.Length == 0) return;
         selectedKeywords.Add(value);
         if (!catalogKeywords.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
             catalogKeywords = catalogKeywords.Append(value).OrderBy(x => x).ToList();
+            var custom = catalogRoleGroups.FirstOrDefault(group =>
+                group.Name.Equals("Custom", StringComparison.OrdinalIgnoreCase));
+            if (custom is null)
+            {
+                custom = new JobRoleGroup { Name = "Custom" };
+                catalogRoleGroups = catalogRoleGroups.Append(custom).ToList();
+            }
+            custom.Roles.Add(value);
+        }
         customKeyword = "";
     }
     private void AddCustomLocation()
@@ -754,7 +834,7 @@
         {
             var result = Improver.TailorForJobWithReport(resume, jobDescription, new JobTailoringOptions
             {
-                AtsFixes = new ResumeFixOptions(),
+                AtsFixes = fixOptions,
                 SelectedTerms = selectedMatchTerms.ToArray()
             });
             matchFixReport = result.Outcomes;
@@ -793,6 +873,39 @@
         }
         catch (Exception ex) { error = $"Could not fix the original resume: {ex.Message}"; }
         finally { isBusy=false; }
+    }
+
+    private async Task ApplySelectedCorrectionsAndRecheckAsync()
+    {
+        if (resume is null) return;
+        isBusy = true;
+        error = null;
+        downloadStatus = null;
+        fixReport = [];
+        busyTitle = "Applying selected corrections";
+        busyDetail = "Updating the working resume and recalculating every ATS metric...";
+        await InvokeAsync(StateHasChanged);
+        await Task.Yield();
+        try
+        {
+            var result = Improver.ImproveOriginalWithReport(resume, fixOptions);
+            var workingName = $"Rechecked-{Path.GetFileNameWithoutExtension(resume.OriginalFileName)}.docx";
+            await using var correctedStream = new MemoryStream(result.Bytes);
+            resume = await Parser.ParseAsync(correctedStream, workingName);
+            atsResult = Ats.Analyze(resume);
+            matchResult = null;
+            fixReport = result.Outcomes;
+            downloadStatus =
+                $"Selected corrections applied to the working resume. ATS recalculated at {atsResult.Score:0}% (Grade {atsResult.Grade}). Download buttons now use this corrected version.";
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not apply and recheck the selected corrections: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
     }
 
     private static string FixStatusClass(string status) =>

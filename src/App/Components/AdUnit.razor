@@ -6,7 +6,7 @@
 
 @code {
     [Parameter, EditorRequired] public string Slot { get; set; } = "";
-    [Parameter] public string PublisherId { get; set; } = "ca-pub-YOUR_PUBLISHER_ID";
+    [Parameter] public string PublisherId { get; set; } = "ca-pub-8487728962349258";
     private readonly string elementId = $"ad-{Guid.NewGuid():N}";
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

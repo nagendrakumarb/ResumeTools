@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 const string configFile = "src/App/job-providers.json";
-const string searchOptionsFile = "src/App/job-search-options.json";
+const string searchOptionsFile = "src/App/wwwroot/data/job-search-options.json";
 const string outputFile = "src/App/wwwroot/data/jobs.json";
 
 if (!File.Exists(configFile))
@@ -32,6 +32,11 @@ var searchOptions = File.Exists(searchOptionsFile)
     })?.AsObject() ?? new JsonObject()
     : new JsonObject();
 var keywords = StringArray(searchOptions, "keywords");
+if (keywords.Count == 0)
+    keywords = All(searchOptions, "roleGroups")
+        .SelectMany(group => StringArray(group, "roles"))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
 var locations = StringArray(searchOptions, "locations");
 var searches = (from keyword in keywords
                 from location in locations.DefaultIfEmpty("")
@@ -503,6 +508,8 @@ static bool MatchesRole(string value, string role)
 }
 static bool MatchesLocation(string jobLocation, string requestedLocation)
 {
+    if (Contains(jobLocation, "worldwide") || Contains(jobLocation, "anywhere"))
+        return true;
     if (requestedLocation.Equals("Worldwide", StringComparison.OrdinalIgnoreCase))
         return true;
     if (requestedLocation.Equals("Remote", StringComparison.OrdinalIgnoreCase))

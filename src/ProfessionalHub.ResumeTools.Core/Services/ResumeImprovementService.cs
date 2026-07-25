@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
@@ -17,6 +18,12 @@ public sealed partial class ResumeImprovementService
     { ["recieve"]="receive", ["seperate"]="separate", ["occured"]="occurred", ["managment"]="management", ["experiance"]="experience", ["developement"]="development", ["acheived"]="achieved", ["sucessful"]="successful" };
     private static readonly HashSet<string> KnownHeadings = new(StringComparer.OrdinalIgnoreCase)
     { "summary", "professional summary", "profile", "skills", "technical skills", "core competencies", "core strengths", "experience", "professional experience", "work experience", "employment", "education", "certifications", "projects", "project highlights", "achievements", "current status" };
+    private static readonly HashSet<string> UnsafeJobTerms = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "bachelor", "bachelors", "degree", "desired", "equivalent", "implementation", "majorly",
+        "minimum", "typically", "education", "experience", "years", "applications", "development",
+        "release", "testing", "required", "preferred"
+    };
 
     public static IReadOnlyList<ResumeTemplateOption> Templates { get; } =
     [
@@ -78,11 +85,16 @@ public sealed partial class ResumeImprovementService
                 "Exact-format job tailoring requires the original DOCX. A PDF can be analyzed, but rebuilding it as Word cannot preserve its editable styles and layout.");
         var baseline = ImproveOriginalWithReport(resume, options.AtsFixes);
         var outcomes = baseline.Outcomes.ToList();
-        var requested = options.SelectedTerms
+        var selected = options.SelectedTerms
             .Select(term => Regex.Replace(term.Trim(), @"[^\p{L}\p{N}+#.-]+", " "))
             .Where(term => term.Length >= 2)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        var rejected = selected.Where(term => UnsafeJobTerms.Contains(term)).ToList();
+        var requested = selected.Except(rejected, StringComparer.OrdinalIgnoreCase).ToList();
+        foreach (var term in rejected)
+            outcomes.Add(new($"Target term: {term}", "Not applied",
+                "This is requirement boilerplate or an unsupported qualification fragment, not a resume skill. It was withheld to prevent keyword stuffing and misleading text."));
         if (requested.Count == 0)
         {
             outcomes.Add(new("Job-specific terminology", "Already satisfied",
@@ -90,8 +102,9 @@ public sealed partial class ResumeImprovementService
             return new ResumeFixResult(baseline.Bytes, outcomes);
         }
 
+        var evidenceText = StripGeneratedTailoringText(resume.Text);
         var alreadyPresent = requested
-            .Where(term => ContainsTerm(resume.Text, term))
+            .Where(term => ContainsTerm(evidenceText, term))
             .ToList();
         var termsToAdd = requested
             .Except(alreadyPresent, StringComparer.OrdinalIgnoreCase)
@@ -106,6 +119,7 @@ public sealed partial class ResumeImprovementService
             var body = document.MainDocumentPart?.Document.Body;
             if (body is not null && requested.Count > 0)
             {
+                RemovePreviouslyGeneratedTailoring(body);
                 var paragraphs = body.Descendants<Paragraph>().ToList();
                 var skillsHeading = paragraphs.FirstOrDefault(IsSkillsOrStrengthsHeading);
                 var concentratedSkills = skillsHeading is null ? null : FindSectionContentParagraph(skillsHeading);
@@ -143,12 +157,21 @@ public sealed partial class ResumeImprovementService
                 "Placed in the most relevant existing resume section while retaining paragraph and run formatting. Verify that the contextual statement accurately describes your experience."));
         foreach (var term in withheld)
             outcomes.Add(new($"Target term: {term}", "Manual action required",
-                "No reliable skills or strengths section was found, so the term was withheld to avoid changing the document structure."));
+                "The original resume did not contain credible supporting evidence for this requirement. It was withheld to prevent an unsupported claim or keyword stuffing."));
         outcomes.Add(new("Job-match compatibility", withheld.Count == 0 ? "Applied—review recommended" : "Partially applied",
             withheld.Count == 0
                 ? $"{applied.Count} selected terms were added and {alreadyPresent.Distinct(StringComparer.OrdinalIgnoreCase).Count()} were already present. Review for truthfulness, then recalculate the match."
                 : $"{applied.Count} selected terms were added; {withheld.Count} require manual placement because no reliable target section was found."));
         return new ResumeFixResult(stream.ToArray(), outcomes);
+    }
+
+    private static string StripGeneratedTailoringText(string value) =>
+        GeneratedTailoringPattern.Replace(value, " ");
+
+    private static void RemovePreviouslyGeneratedTailoring(Body body)
+    {
+        foreach (var text in body.Descendants<Text>())
+            text.Text = GeneratedTailoringPattern.Replace(text.Text, "");
     }
 
     private static List<ResumeFixOutcome> ApplyInPlaceDocxFixes(WordprocessingDocument document, ParsedResume resume, ResumeFixOptions options)
@@ -191,13 +214,41 @@ public sealed partial class ResumeImprovementService
             paragraphs = body.Descendants<Paragraph>().ToList();
         }
 
-        var summaryBody = paragraphs.FirstOrDefault(p =>
-            p.InnerText.Length >= 100 &&
-            (StyleOf(p).Contains("Heading", StringComparison.OrdinalIgnoreCase) ||
-             p.InnerText.Contains("years of experience", StringComparison.OrdinalIgnoreCase)));
+        var summaryHeading = paragraphs.FirstOrDefault(IsSummaryHeading);
+        var summaryBody = summaryHeading is null
+            ? paragraphs.Take(30).FirstOrDefault(p =>
+                p.InnerText.Length >= 35 &&
+                p.InnerText.Contains("years of", StringComparison.OrdinalIgnoreCase) &&
+                p.InnerText.Contains("experience", StringComparison.OrdinalIgnoreCase))
+            : FindSectionContentParagraph(summaryHeading);
         var alreadyHasSummary = paragraphs.Any(p =>
             p.InnerText.Trim().Equals("SUMMARY", StringComparison.OrdinalIgnoreCase) ||
             p.InnerText.Trim().Equals("PROFESSIONAL SUMMARY", StringComparison.OrdinalIgnoreCase));
+        var normalizedSummaryHeading = false;
+        if (options.AddProfessionalSummaryHeading && summaryHeading is not null && !alreadyHasSummary)
+        {
+            SetParagraphText(summaryHeading, "PROFESSIONAL SUMMARY");
+            alreadyHasSummary = true;
+            normalizedSummaryHeading = true;
+        }
+        var forcedSummaryApplied = false;
+        if (options.AddProfessionalSummaryHeading && options.ForceProfessionalSummary &&
+            summaryBody is null && !alreadyHasSummary)
+        {
+            var anchor = paragraphs.FirstOrDefault(IsStructuralSectionHeading);
+            var supported = InferSupportedStrengths(resume.Text);
+            if (anchor is not null && supported.Count > 0)
+            {
+                var heading = InPlaceParagraph("PROFESSIONAL SUMMARY", anchor, heading: true);
+                summaryBody = InPlaceParagraph(
+                    $"Professional with demonstrated strengths in {string.Join(", ", supported)}.",
+                    anchor, heading: false);
+                anchor.InsertBeforeSelf(heading);
+                anchor.InsertBeforeSelf(summaryBody);
+                alreadyHasSummary = true;
+                forcedSummaryApplied = true;
+            }
+        }
         if (options.AddProfessionalSummaryHeading && summaryBody is not null && !alreadyHasSummary)
         {
             var headingFormat = paragraphs.FirstOrDefault(IsStructuralSectionHeading) ?? summaryBody;
@@ -205,7 +256,9 @@ public sealed partial class ResumeImprovementService
             summaryBody.InsertBeforeSelf(heading);
         }
         if (options.AddProfessionalSummaryHeading)
-            outcomes.Add(new("Standard summary heading", !alreadyHasSummary && summaryBody is not null ? "Applied" : alreadyHasSummary ? "Already satisfied" : "Manual action required",
+            outcomes.Add(new("Standard summary heading", normalizedSummaryHeading || forcedSummaryApplied || (!alreadyHasSummary && summaryBody is not null) ? "Applied" : alreadyHasSummary ? "Already satisfied" : "Manual action required",
+                normalizedSummaryHeading ? "Renamed the existing summary/profile heading to PROFESSIONAL SUMMARY without moving its content." :
+                forcedSummaryApplied ? "Created a concise PROFESSIONAL SUMMARY using only strengths evidenced elsewhere in the resume." :
                 !alreadyHasSummary && summaryBody is not null ? "Added PROFESSIONAL SUMMARY above the existing summary text." :
                 alreadyHasSummary ? "A recognized summary heading already exists." : "No reliable summary paragraph was found. Add a truthful 3–5 line summary near the top."));
 
@@ -221,18 +274,51 @@ public sealed partial class ResumeImprovementService
                 summaryBody.InsertAfterSelf(strengthBody);
                 summaryBody.InsertAfterSelf(strengthHeading);
             }
-            outcomes.Add(new("Add evidenced strengths", strengths.Count > 0 && !alreadyHasStrengths && summaryBody is not null ? "Applied" :
+            var forcedStrengthsApplied = false;
+            if (options.ForceEvidenceBackedStrengths && strengths.Count > 0 &&
+                !alreadyHasStrengths && summaryBody is null)
+            {
+                var anchor = paragraphs.FirstOrDefault(IsStructuralSectionHeading);
+                if (anchor is not null)
+                {
+                    anchor.InsertBeforeSelf(InPlaceParagraph("CORE STRENGTHS", anchor, heading: true));
+                    anchor.InsertBeforeSelf(InPlaceParagraph(string.Join(" | ", strengths), anchor, heading: false));
+                    alreadyHasStrengths = true;
+                    forcedStrengthsApplied = true;
+                }
+            }
+            outcomes.Add(new("Add evidenced strengths", forcedStrengthsApplied || strengths.Count > 0 && !alreadyHasStrengths && summaryBody is not null ? "Applied" :
                 alreadyHasStrengths ? "Already satisfied" : "Manual action required",
                 strengths.Count > 0 ? $"Evidence-backed strengths: {string.Join(", ", strengths)}." : "No additional strengths could be safely inferred. Add only skills supported by work examples."));
         }
 
-        if (options.BalanceBoldUsage)
+        if (options.BalanceBoldUsage && options.ForceBalanceBoldUsage && !options.ForceCompactPageLayout)
+        {
+            var result = ForceBalancedBold(document);
+            outcomes.Add(new("Balance bold emphasis", "Applied—review recommended",
+                $"Preserved {result.Preserved} structural headings and labels; removed bold from {result.Unbolded} body-text run{(result.Unbolded == 1 ? "" : "s")} and migrated {result.Migrated} structural run{(result.Migrated == 1 ? "" : "s")} to visually identical style-based emphasis."));
+        }
+
+        if (options.BalanceBoldUsage && !options.ForceBalanceBoldUsage)
         {
             outcomes.Add(new("Balance bold emphasis", "Manual action required",
                 "Not changed automatically because bold can encode the uploaded resume's visual hierarchy. Review emphasis in Word if the ATS metric remains low."));
         }
 
-        if (options.CompactPageLayout)
+        if (options.CompactPageLayout && options.ForceCompactPageLayout)
+        {
+            var result = ForceCompactLayout(document);
+            outcomes.Add(new("Compact 1–2 page layout", "Applied—review recommended",
+                $"Preserved every non-empty project and achievement paragraph. Removed {result.EmptyParagraphs} redundant empty paragraph{(result.EmptyParagraphs == 1 ? "" : "s")}, tightened spacing in {result.SpacingAdjusted} paragraph{(result.SpacingAdjusted == 1 ? "" : "s")}, adjusted {result.FontRunsAdjusted} oversized body-text run{(result.FontRunsAdjusted == 1 ? "" : "s")}, and compacted {result.SectionsAdjusted} page section{(result.SectionsAdjusted == 1 ? "" : "s")}. Open in Word to confirm the rendered page count; reaching two pages may still require an explicit content rewrite."));
+            if (options.BalanceBoldUsage && options.ForceBalanceBoldUsage)
+            {
+                var boldResult = ForceBalancedBold(document);
+                outcomes.Add(new("Balance bold emphasis", "Applied—review recommended",
+                    $"Applied after compaction so the final retained content is measured. Preserved {boldResult.Preserved} structural headings and labels; removed bold from {boldResult.Unbolded} body-text run{(boldResult.Unbolded == 1 ? "" : "s")} and migrated {boldResult.Migrated} structural run{(boldResult.Migrated == 1 ? "" : "s")} to visually identical style-based emphasis."));
+            }
+        }
+
+        if (options.CompactPageLayout && !options.ForceCompactPageLayout)
         {
             outcomes.Add(new("Compact 1–2 page layout", "Manual action required",
                 "Not changed automatically because global font, spacing, margin, or empty-paragraph edits would alter the uploaded layout. Shorten lower-priority content manually when the resume exceeds two pages."));
@@ -254,14 +340,321 @@ public sealed partial class ResumeImprovementService
         return outcomes;
     }
 
+    private sealed record CompactResult(int Paragraphs, int EmptyParagraphs, int SpacingAdjusted, int FontRunsAdjusted, int SectionsAdjusted);
+    private sealed record BoldResult(int Preserved, int Unbolded, int Migrated);
+
+    private static CompactResult ForceCompactLayout(WordprocessingDocument document)
+    {
+        var body = document.MainDocumentPart?.Document.Body;
+        if (body is null) return new(0, 0, 0, 0, 0);
+        var paragraphs = body.Descendants<Paragraph>().ToList();
+        var removedEmpty = 0;
+        var consecutiveEmpty = false;
+        foreach (var paragraph in paragraphs.ToList())
+        {
+            if (string.IsNullOrWhiteSpace(paragraph.InnerText))
+            {
+                if (consecutiveEmpty && paragraph.Parent is not TableCell)
+                {
+                    paragraph.Remove();
+                    removedEmpty++;
+                    continue;
+                }
+                consecutiveEmpty = true;
+            }
+            else consecutiveEmpty = false;
+
+        }
+
+        var spacingAdjusted = 0;
+        foreach (var paragraph in body.Descendants<Paragraph>()
+                     .Where(item => !string.IsNullOrWhiteSpace(item.InnerText)))
+        {
+            var protectedParagraph = IsCompactionProtectedParagraph(paragraph);
+            var properties = paragraph.ParagraphProperties ??= new ParagraphProperties();
+            var spacing = properties.SpacingBetweenLines ??= new SpacingBetweenLines();
+            spacing.Before = protectedParagraph ? "35" : "0";
+            spacing.After = protectedParagraph ? "18" : "0";
+            spacing.Line = protectedParagraph ? "220" : "205";
+            spacing.LineRule = LineSpacingRuleValues.Auto;
+            if (!protectedParagraph)
+            {
+                properties.KeepNext?.Remove();
+                properties.KeepLines?.Remove();
+                properties.PageBreakBefore?.Remove();
+            }
+            spacingAdjusted++;
+        }
+
+        var fontRunsAdjusted = 0;
+        foreach (var run in body.Descendants<Run>())
+        {
+            var paragraph = run.Ancestors<Paragraph>().FirstOrDefault();
+            if (paragraph is null || IsCompactionProtectedParagraph(paragraph))
+            {
+                continue;
+            }
+
+            var properties = run.RunProperties ??= new RunProperties();
+            var size = properties.FontSize ??= new FontSize();
+            var effectiveHalfPoints = int.TryParse(size.Val?.Value, out var halfPoints)
+                ? halfPoints
+                : 22;
+            size.Val = Math.Min(19, effectiveHalfPoints).ToString(CultureInfo.InvariantCulture);
+            var complexSize = properties.FontSizeComplexScript ??= new FontSizeComplexScript();
+            complexSize.Val = size.Val;
+            fontRunsAdjusted++;
+        }
+
+        var sectionsAdjusted = 0;
+        foreach (var section in body.Descendants<SectionProperties>())
+        {
+            var margins = section.GetFirstChild<PageMargin>();
+            if (margins is null) continue;
+
+            var changed = false;
+            if (margins.Top?.Value is int top && top > 432)
+            {
+                margins.Top = 432;
+                changed = true;
+            }
+            if (margins.Bottom?.Value is int bottom && bottom > 432)
+            {
+                margins.Bottom = 432;
+                changed = true;
+            }
+            if (margins.Left?.Value is uint left && left > 504)
+            {
+                margins.Left = 504;
+                changed = true;
+            }
+            if (margins.Right?.Value is uint right && right > 504)
+            {
+                margins.Right = 504;
+                changed = true;
+            }
+            if (changed) sectionsAdjusted++;
+        }
+
+        return new(
+            paragraphs.Count - removedEmpty,
+            removedEmpty,
+            spacingAdjusted,
+            fontRunsAdjusted,
+            sectionsAdjusted);
+    }
+
+    private static List<Paragraph> BuildCompactionCandidates(Body body)
+    {
+        var paragraphs = body.Descendants<Paragraph>().Where(p => !string.IsNullOrWhiteSpace(p.InnerText)).ToList();
+        var fullyProtectedSections = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "summary", "professional summary", "profile", "skills", "technical skills",
+              "core competencies", "core strengths" };
+        var section = "";
+        var contentIndexInSection = 0;
+        var candidates = new List<(Paragraph Paragraph, int Index, bool Quantified)>();
+        for (var index = 0; index < paragraphs.Count; index++)
+        {
+            var paragraph = paragraphs[index];
+            if (IsStructuralSectionHeading(paragraph))
+            {
+                section = paragraph.InnerText.Trim().TrimEnd(':').ToLowerInvariant();
+                contentIndexInSection = 0;
+                continue;
+            }
+            contentIndexInSection++;
+            var text = paragraph.InnerText.Trim();
+            var preserveCoreEducation = (section.Equals("education", StringComparison.OrdinalIgnoreCase) ||
+                                         section.Equals("certifications", StringComparison.OrdinalIgnoreCase)) &&
+                                        contentIndexInSection <= 2;
+            if (fullyProtectedSections.Contains(section) ||
+                preserveCoreEducation ||
+                IsStructuralOrIdentityParagraph(paragraph) ||
+                text.Length < 18 ||
+                text.Contains('@') ||
+                text.Contains("linkedin.com", StringComparison.OrdinalIgnoreCase))
+                continue;
+            candidates.Add((paragraph, index, Regex.IsMatch(text, @"\d|%|\$|₹|€|£")));
+        }
+        return candidates
+            .OrderBy(item => item.Quantified) // retain quantified evidence longest
+            .ThenByDescending(item => item.Index) // shorten older/later material first
+            .Select(item => item.Paragraph)
+            .ToList();
+    }
+
+    private static int CountWords(string text)
+        => Regex.Matches(text, @"[\p{L}\p{N}+#.-]+").Count;
+
+    private static BoldResult ForceBalancedBold(WordprocessingDocument document)
+    {
+        var body = document.MainDocumentPart?.Document.Body;
+        if (body is null) return new(0, 0, 0);
+        var paragraphs = body.Descendants<Paragraph>().Where(p => !string.IsNullOrWhiteSpace(p.InnerText)).ToList();
+        var preserved = 0;
+        var unbolded = 0;
+        var structuralParagraphs = new List<Paragraph>();
+        foreach (var paragraph in paragraphs)
+        {
+            if (IsStructuralOrIdentityParagraph(paragraph) ||
+                HasInlineResumeLabel(paragraph) ||
+                (paragraph.InnerText.Trim().Length < 90 && !LooksLikeBodySentence(paragraph.InnerText)))
+            {
+                preserved++;
+                structuralParagraphs.Add(paragraph);
+                continue;
+            }
+            foreach (var runProperties in paragraph.Descendants<RunProperties>())
+            {
+                if (runProperties.Bold is not null) { runProperties.Bold.Remove(); unbolded++; }
+                runProperties.BoldComplexScript?.Remove();
+            }
+        }
+
+        foreach (var paragraph in paragraphs.Where(HasInlineResumeLabel))
+            PreserveInlineResumeLabel(paragraph);
+
+        var migrated = 0;
+        if (DirectBoldPercentage(body) > 18)
+        {
+            EnsurePreservedBoldStyle(document);
+            foreach (var paragraph in structuralParagraphs.AsEnumerable().Reverse())
+            {
+                if (DirectBoldPercentage(body) <= 18) break;
+                foreach (var runProperties in paragraph.Descendants<RunProperties>())
+                {
+                    if (runProperties.Bold is null) continue;
+                    runProperties.Bold.Remove();
+                    runProperties.BoldComplexScript?.Remove();
+                    runProperties.RunStyle = new RunStyle { Val = "ResumePreservedBold" };
+                    migrated++;
+                }
+            }
+        }
+        return new(preserved, unbolded, migrated);
+    }
+
+    private static bool HasInlineResumeLabel(Paragraph paragraph)
+    {
+        var text = paragraph.InnerText.TrimStart();
+        var delimiter = text.IndexOf(':');
+        if (delimiter is > 0 and <= 45) return true;
+
+        var firstLine = text.Split(['\r', '\n'], 2, StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault()?.Trim();
+        return firstLine is { Length: > 0 and <= 55 } &&
+               firstLine.Any(char.IsLetter) &&
+               firstLine.Where(char.IsLetter).All(char.IsUpper);
+    }
+
+    private static void PreserveInlineResumeLabel(Paragraph paragraph)
+    {
+        var text = paragraph.InnerText;
+        var colon = text.IndexOf(':');
+        var firstBreak = text.IndexOfAny(['\r', '\n']);
+        var boundary = colon is > 0 and <= 45
+            ? colon + 1
+            : firstBreak is > 0 and <= 55
+                ? firstBreak
+                : 0;
+        if (boundary == 0) return;
+
+        var offset = 0;
+        foreach (var run in paragraph.Descendants<Run>())
+        {
+            var length = run.InnerText.Length;
+            if (length > 0 && offset < boundary)
+            {
+                var properties = run.RunProperties ??= new RunProperties();
+                properties.Bold ??= new Bold();
+                properties.BoldComplexScript ??= new BoldComplexScript();
+            }
+            offset += length;
+        }
+    }
+
+    private static double DirectBoldPercentage(Body body)
+    {
+        var runs = body.Descendants<Run>().ToList();
+        var characters = runs.Sum(run => run.InnerText.Length);
+        if (characters == 0) return 0;
+        var boldCharacters = runs.Where(run => run.RunProperties?.Bold is not null).Sum(run => run.InnerText.Length);
+        return boldCharacters * 100d / characters;
+    }
+
+    private static void EnsurePreservedBoldStyle(WordprocessingDocument document)
+    {
+        var styles = document.MainDocumentPart?.StyleDefinitionsPart?.Styles;
+        if (styles is null || styles.Elements<Style>().Any(style =>
+                style.StyleId?.Value == "ResumePreservedBold")) return;
+        styles.Append(new Style(
+            new StyleName { Val = "Resume Preserved Bold" },
+            new BasedOn { Val = "DefaultParagraphFont" },
+            new StyleRunProperties(new Bold()))
+        {
+            Type = StyleValues.Character,
+            StyleId = "ResumePreservedBold",
+            CustomStyle = true
+        });
+        styles.Save();
+    }
+
+    private static bool IsStructuralOrIdentityParagraph(Paragraph paragraph)
+    {
+        var text = paragraph.InnerText.Trim();
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        if (IsStructuralSectionHeading(paragraph)) return true;
+        var style = StyleOf(paragraph);
+        if (style.Contains("Title", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Heading", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Subtitle", StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (text.Length <= 55 && (text.EndsWith(':') || DateRegex().IsMatch(text))) return true;
+        return paragraph.Parent is Body &&
+               paragraph.Parent.Elements<Paragraph>().Where(p => !string.IsNullOrWhiteSpace(p.InnerText)).Take(2).Contains(paragraph);
+    }
+
+    private static bool IsCompactionProtectedParagraph(Paragraph paragraph)
+    {
+        if (IsStructuralOrIdentityParagraph(paragraph)) return true;
+
+        var text = paragraph.InnerText.Trim();
+        var style = StyleOf(paragraph);
+        if (style.Contains("Name", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Job Title", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Position", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Employer", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Company", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Year", StringComparison.OrdinalIgnoreCase) ||
+            style.Contains("Header", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var hasDisplaySize = paragraph.Descendants<Run>()
+            .Select(run => run.RunProperties?.FontSize?.Val?.Value)
+            .Select(value => int.TryParse(value, out var parsed) ? parsed : 0)
+            .Any(halfPoints => halfPoints >= 26);
+        return hasDisplaySize &&
+               (text.Length <= 180 ||
+                text.Where(char.IsLetter).All(char.IsUpper));
+    }
+
+    private static bool LooksLikeBodySentence(string text)
+        => text.Length >= 55 && (text.Contains('.') || text.Contains(';') || text.Contains('•'));
+
     private static List<ResumeFixOutcome> SelectedOutcomes(ResumeFixOptions options, bool pdf)
     {
         var outcomes = new List<ResumeFixOutcome>();
         void Add(bool selected, string name, string status, string detail) { if (selected) outcomes.Add(new(name, status, detail)); }
         Add(options.AddProfessionalSummaryHeading, "Standard summary heading", "Applied", "Added when the source did not contain a recognized heading.");
         Add(options.KeepOnePrimaryPhone, "Keep one primary phone", "Applied", "Normalized the contact block to one detected primary phone.");
-        Add(options.CompactPageLayout, "Compact 1–2 page layout", "Applied—review recommended", "Applied compact typography and margins. Verify the final page count in Word.");
-        Add(options.BalanceBoldUsage, "Balance bold emphasis", "Applied", "Reserved bold styling for headings and key labels.");
+        Add(options.CompactPageLayout, "Compact 1–2 page layout",
+            options.ForceCompactPageLayout ? "Applied—review recommended" : "Manual action required",
+            options.ForceCompactPageLayout ? "Applied compact typography and margins. Verify the final page count in Word." : "Enable the force flag to alter layout.");
+        Add(options.BalanceBoldUsage, "Balance bold emphasis",
+            options.ForceBalanceBoldUsage ? "Applied—review recommended" : "Manual action required",
+            options.ForceBalanceBoldUsage ? "Reserved bold styling for headings and key labels while reducing body-text bold." : "Enable the force flag to alter bold styling.");
         Add(options.RemoveRepeatedContent, "Remove exact repetition", "Applied", "Removed exact repeated lines while retaining distinct evidence.");
         Add(options.ImproveReadingClarity, "Improve long-line clarity", "Applied—review recommended", "Applied safe punctuation-based splits; manually review technical bullets.");
         Add(options.AddEvidenceBackedStrengths, "Add evidenced strengths", "Applied—review recommended", "Added only strengths supported by phrases already present.");
@@ -299,6 +692,12 @@ public sealed partial class ResumeImprovementService
 
         foreach (var term in terms)
         {
+            if (!HasCredibleEvidence(body.InnerText, term))
+            {
+                placements.Add(new(term, null, "unsupported"));
+                continue;
+            }
+
             if (IsSummaryCompetency(term) && summaryParagraph is not null)
             {
                 placements.Add(new(term, summaryParagraph, "summary"));
@@ -334,9 +733,40 @@ public sealed partial class ResumeImprovementService
                 continue;
             }
 
-            placements.Add(new(term, skillsParagraph, "skills"));
+            placements.Add(IsTechnicalSkill(term)
+                ? new(term, skillsParagraph, "skills")
+                : new(term, null, "unsupported"));
         }
         return placements;
+    }
+
+    private static bool HasCredibleEvidence(string resumeText, string term)
+    {
+        if (ContainsTerm(resumeText, term)) return true;
+        var aliases = term.ToLowerInvariant() switch
+        {
+            "rest" or "restful api" => new[] { "web api", "http api", "web service" },
+            "ci/cd" => new[] { "continuous integration", "continuous deployment", "build pipeline", "release pipeline" },
+            "site reliability" => new[] { "sre", "reliability engineering" },
+            "incident response" => new[] { "production incident", "incident remediation" },
+            "data engineering" => new[] { "etl pipeline", "data pipeline" },
+            "machine learning" => new[] { "ml model", "predictive model" },
+            "technical leadership" => new[] { "technical lead", "led engineering", "mentored engineers" },
+            "stakeholder management" => new[] { "stakeholder", "client management" },
+            "problem solving" => new[] { "problem-solving", "root cause analysis" },
+            _ => Array.Empty<string>()
+        };
+        return aliases.Any(alias => ContainsTerm(resumeText, alias));
+    }
+
+    private static bool IsSummaryHeading(Paragraph paragraph)
+    {
+        var value = paragraph.InnerText.Trim().TrimEnd(':');
+        return value.Equals("SUMMARY", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("PROFESSIONAL SUMMARY", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("PROFILE", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("PROFESSIONAL PROFILE", StringComparison.OrdinalIgnoreCase) ||
+               value.Equals("ABOUT ME", StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AppendContextualTerms(Paragraph paragraph, IReadOnlyCollection<string> terms, string placementType)
@@ -346,11 +776,23 @@ public sealed partial class ResumeImprovementService
         var value = placementType switch
         {
             "skills" => $"{separator}| {string.Join(" | ", terms)}",
-            "summary" => $"{separator}Relevant strengths include {string.Join(", ", terms)}.",
-            "technology-evidence" => $"{separator}Relevant technologies: {string.Join(", ", terms)}.",
-            _ => $"{separator}Relevant capabilities: {string.Join(", ", terms)}."
+            "summary" => $"{separator}Demonstrated strengths include {NaturalLanguageList(terms)}.",
+            "technology-evidence" => $"{separator}Applied {NaturalLanguageList(terms)} in relevant technical delivery.",
+            _ => $"{separator}Applied {NaturalLanguageList(terms)} in relevant professional work."
         };
         AppendParagraphText(paragraph, value);
+    }
+
+    private static string NaturalLanguageList(IReadOnlyCollection<string> terms)
+    {
+        var values = terms.ToArray();
+        return values.Length switch
+        {
+            0 => "",
+            1 => values[0],
+            2 => $"{values[0]} and {values[1]}",
+            _ => $"{string.Join(", ", values[..^1])}, and {values[^1]}"
+        };
     }
 
     private static bool ContainsTerm(string text, string term)
@@ -609,7 +1051,7 @@ public sealed partial class ResumeImprovementService
                 var run = style.StyleRunProperties;
                 var paragraph = style.StyleParagraphProperties;
                 if (run is null || paragraph is null) continue;
-                if (options.CompactPageLayout) switch (style.StyleId?.Value)
+                if (options.ForceCompactPageLayout) switch (style.StyleId?.Value)
                 {
                     case "ResumeName":
                         run.FontSize = new FontSize { Val = "48" };
@@ -630,13 +1072,13 @@ public sealed partial class ResumeImprovementService
                     default:
                         run.FontSize = new FontSize { Val = "17" };
                         paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "0", After = "12", Line = "205", LineRule = LineSpacingRuleValues.Auto };
-                        if (options.BalanceBoldUsage) run.Bold?.Remove();
+                        if (options.ForceBalanceBoldUsage) run.Bold?.Remove();
                         break;
                 }
             }
             var body = document.MainDocumentPart?.Document.Body;
             var section = body?.Elements<SectionProperties>().LastOrDefault();
-            if (section is not null && options.CompactPageLayout)
+            if (section is not null && options.ForceCompactPageLayout)
             {
                 section.RemoveAllChildren<PageMargin>();
                 section.Append(new PageMargin { Top = 500, Right = 560, Bottom = 500, Left = 560, Header = 180, Footer = 180 });
@@ -1357,6 +1799,9 @@ public sealed partial class ResumeImprovementService
     private static readonly Regex LinkedInPattern = new(@"(?:https?://)?(?:www\.)?linkedin\.com/in/[\w-]+/?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex DatePattern = new(@"\b(?:19|20)\d{2}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex LeadingArtifactPattern = new(@"^\d{8,}", RegexOptions.Compiled);
+    private static readonly Regex GeneratedTailoringPattern = new(
+        @"(?:(?:Demonstrated strengths include|Relevant strengths include|Relevant technologies:|Relevant capabilities:)\s+[^.\r\n]{1,300}\.|Applied\s+[^.\r\n]{1,300}\s+in relevant (?:technical delivery|professional work)\.)",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private static Regex WhitespaceRegex() => WhitespacePattern;
     private static Regex LeadingPronounRegex() => LeadingPronounPattern;
     private static Regex EmailRegex() => EmailPattern;
