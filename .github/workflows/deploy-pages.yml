@@ -1,0 +1,46 @@
+name: Deploy Blazor PWA to GitHub Pages
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Build static job catalog
+        shell: bash
+        run: |
+          printf '%s' "$JOB_PROVIDERS_JSON" > src/App/job-providers.json
+          dotnet run --project tools/JobCatalogBuilder/JobCatalogBuilder.csproj -c Release
+        env:
+          JOB_PROVIDERS_JSON: ${{ secrets.JOB_PROVIDERS_JSON }}
+      - run: dotnet publish src/App/ResumeTools.csproj -c Release -o publish -p:SkipJobCatalogBuild=true
+      - name: Prepare GitHub Pages artifact
+        shell: bash
+        run: |
+          cp publish/wwwroot/index.html publish/wwwroot/404.html
+          touch publish/wwwroot/.nojekyll
+          printf 'professionalhub.co.in\n' > publish/wwwroot/CNAME
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
