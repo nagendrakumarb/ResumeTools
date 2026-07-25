@@ -123,8 +123,8 @@
                         <small>@jobFolderMessage @if (lastTailoredResumeBytes is not null) { <span>Latest tailored CV is ready to attach.</span> }</small>
                     </div>
                     <button type="button" @onclick="MapJobFolderAsync" disabled="@(!jobFolderSupported || isBusy)">Map local folder</button>
-                    <button type="button" @onclick='() => SaveSelectedJobsAsync("Applied")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Mark applied</button>
-                    <button type="button" @onclick='() => SaveSelectedJobsAsync("Completed")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Mark completed</button>
+                    <button type="button" title="Application was submitted to the employer" @onclick='() => SaveSelectedJobsAsync("Applied")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Mark applied</button>
+                    <button type="button" title="Application lifecycle is closed, withdrawn, rejected, or otherwise finished" @onclick='() => SaveSelectedJobsAsync("Completed")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Close application</button>
                 </div>
                 @if (jobResults.Count > 0)
                 {

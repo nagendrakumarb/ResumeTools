@@ -310,6 +310,7 @@ window.professionalHub = {
         groups.get(date).push(record);
       }
       let saved = 0, updated = 0, total = 0;
+      const verifiedFiles = [];
       for (const [date, incoming] of groups) {
         const directory = await ledger.handle.getDirectoryHandle(date, { create: true });
         const content = await this.readDateFolder(directory, ledger.key);
@@ -334,9 +335,24 @@ window.professionalHub = {
         const writable = await fileHandle.createWritable();
         await writable.write(JSON.stringify({ version: 2, algorithm: "AES-GCM-256", chunks, documents }));
         await writable.close();
+        const writtenFile = await fileHandle.getFile();
+        if (!writtenFile.size)
+          throw new Error(`The browser created ${date}/${this.fileName}, but the file is empty.`);
+        const verification = await this.readDateFolder(directory, ledger.key);
+        const verifiedById = new Map(verification.records.map(record => [record.fingerprint, record]));
+        const missing = incoming.filter(record => {
+          const stored = verifiedById.get(record.fingerprint);
+          return !stored || stored.status !== record.status;
+        });
+        if (missing.length)
+          throw new Error(`The encrypted ledger could not be verified after writing ${date}/${this.fileName}.`);
+        verifiedFiles.push(`${date}/${this.fileName}`);
         total += byId.size;
       }
-      return { saved, updated, total, message: `${saved} job(s) saved and ${updated} updated in the encrypted local ledger.` };
+      return {
+        saved, updated, total,
+        message: `${saved} job(s) saved and ${updated} updated. Verified: ${verifiedFiles.join(", ")}.`
+      };
     }
   },
   history: {
