@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><base href="/" />
+<script>document.querySelector('base').setAttribute('href', location.hostname.endsWith('github.io') ? '/ResumeTools/' : '/');</script>
 <title>Free Resume Match Score | Professional Hub</title><meta name="description" content="Compare your PDF or DOCX resume with a job description using private, offline TF-IDF analysis. No file uploads." /><meta name="theme-color" content="#102a43" />
 <link rel="canonical" href="https://professionalhub.co.in/" /><link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" /><link rel="stylesheet" href="css/app.css" /><link rel="manifest" href="manifest.webmanifest" /><link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
 </head>
@@ -7,4 +8,4 @@
 <p class="eyebrow">Private • Offline • No uploads</p><h1>Free resume and job description match score</h1><p>Professional Hub helps job seekers compare PDF and DOCX resumes with job descriptions. The tool uses TF-IDF keyword weighting and cosine similarity entirely in your browser.</p>
 <h2>How the resume matcher works</h2><p>Select a resume, paste a job description, and review your match score, matching skills, and missing terms. Your documents stay on your device and are never uploaded to our servers.</p>
 <h2>Private career tools for professionals</h2><p>Use this installable web app online or offline to tailor your resume truthfully for relevant roles.</p><p>Loading the interactive resume analyzer…</p></main></div>
-<div id="blazor-error-ui">An unexpected error occurred. <a href="." class="reload">Reload</a><span class="dismiss">🗙</span></div><script src="js/professionalhub.js"></script><script src="_framework/blazor.webassembly.js"></script><script>navigator.serviceWorker.register('service-worker.js');</script></body></html>
+<div id="blazor-error-ui">An unexpected error occurred. <a href="." class="reload">Reload</a><span class="dismiss">🗙</span></div><script src="js/professionalhub.js"></script><script src="_framework/blazor.webassembly.js"></script><script>navigator.serviceWorker.register(new URL('service-worker.js', document.baseURI));</script></body></html>
