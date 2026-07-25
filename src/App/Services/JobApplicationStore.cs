@@ -31,7 +31,11 @@ public sealed partial class JobApplicationStore(IJSRuntime jsRuntime)
     {
         var resumeBase64 = resumeBytes is { Length: > 0 } ? Convert.ToBase64String(resumeBytes) : "";
         var records = jobs.Select(job => ToRecord(job, status, resumeFileName, resumeBase64)).ToArray();
-        return jsRuntime.InvokeAsync<JobSaveResult>("professionalHub.jobLedger.save", records);
+        // Keep the collection as one JavaScript argument. Passing the array
+        // directly to the params overload expands its records into arguments.
+        return jsRuntime.InvokeAsync<JobSaveResult>(
+            "professionalHub.jobLedger.save",
+            (object?)records);
     }
 
     public static string Fingerprint(NormalizedJob job)

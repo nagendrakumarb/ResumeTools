@@ -303,8 +303,15 @@ window.professionalHub = {
     },
     save: async function (records) {
       const ledger = await this.readAll(true);
+      const incomingRecords = Array.isArray(records)
+        ? records
+        : records && typeof records === "object"
+          ? [records]
+          : [];
+      if (!incomingRecords.length)
+        throw new Error("No valid job records were supplied for saving.");
       const groups = new Map();
-      for (const record of records || []) {
+      for (const record of incomingRecords) {
         const date = /^\d{4}-\d{2}-\d{2}$/.test(record.postedDate) ? record.postedDate : new Date().toISOString().slice(0, 10);
         if (!groups.has(date)) groups.set(date, []);
         groups.get(date).push(record);
