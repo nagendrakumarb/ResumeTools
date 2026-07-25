@@ -1,0 +1,91 @@
+{
+  "catalog": {
+    "postedWithinDays": 30,
+    "limitPerSearch": 25,
+    "minimumCatalogJobs": 75
+  },
+  "freeSources": [
+    {
+      "name": "Remote OK",
+      "type": "remoteok",
+      "enabled": true,
+      "endpoint": "https://remoteok.com/api"
+    },
+    {
+      "name": "Remotive",
+      "type": "remotive",
+      "enabled": true,
+      "endpoint": "https://remotive.com/api/remote-jobs"
+    },
+    {
+      "name": "We Work Remotely",
+      "type": "rss",
+      "enabled": true,
+      "endpoint": "https://weworkremotely.com/remote-jobs.rss",
+      "attributionUrl": "https://weworkremotely.com"
+    }
+  ],
+  "providers": [
+    {
+      "name": "TheirStack",
+      "type": "theirstack",
+      "enabled": false,
+      "apiKey": "PASTE_THEIRSTACK_KEY",
+      "balanceEndpoint": "https://api.theirstack.com/v0/billing/credit-balance",
+      "balancePath": "api_credits",
+      "estimatedCreditsPerSearch": 25,
+      "minimumRemainingCredits": 25,
+      "minimumCallsPerRun": 1,
+      "maxCallsPerRun": 1
+    },
+    {
+      "name": "SerpApi",
+      "type": "serpapi",
+      "enabled": false,
+      "apiKey": "PASTE_SERPAPI_KEY",
+      "balanceEndpoint": "https://serpapi.com/account.json?api_key={apiKey}",
+      "allowancePath": "searches_per_month",
+      "usedPath": "this_month_usage",
+      "estimatedCreditsPerSearch": 1,
+      "minimumRemainingCredits": 1
+    },
+    {
+      "name": "Apify",
+      "type": "generic",
+      "enabled": false,
+      "apiKey": "PASTE_APIFY_KEY",
+      "endpoint": "https://api.apify.com/v2/acts/pryzmlabs~linkedin-jobs-scraper/run-sync-get-dataset-items",
+      "method": "POST",
+      "authentication": "bearer",
+      "body": { "mode": "full", "keywords": "{keyword}", "location": "{location}", "maxResults": 10 },
+      "itemsPath": "",
+      "minimumCallsPerRun": 1,
+      "maxCallsPerRun": 1
+    },
+    {
+      "name": "RapidAPI",
+      "type": "generic",
+      "enabled": false,
+      "apiKey": "PASTE_RAPIDAPI_KEY",
+      "endpoint": "https://REPLACE_HOST/jobs?keyword={keyword}&location={location}&date_posted={days}",
+      "method": "GET",
+      "authentication": "rapidapi",
+      "host": "REPLACE_HOST",
+      "itemsPath": "data",
+      "maxCallsPerRun": 1
+    },
+    {
+      "name": "Parse.bot",
+      "type": "generic",
+      "enabled": false,
+      "apiKey": "PASTE_PARSEBOT_KEY",
+      "endpoint": "https://api.parse.bot/scraper/d67321f5-cc64-4928-92d4-1d6e2ade4d46/search_jobs?keyword={keyword}&page_no=1&sort_by=date&location={location}&experience={experience}&date_posted={days}",
+      "method": "GET",
+      "authentication": "api-key",
+      "apiKeyHeader": "X-API-Key",
+      "itemsPath": "data.jobDetails",
+      "maxCallsPerRun": 1
+    }
+  ],
+  "publicWebFallbacks": []
+}

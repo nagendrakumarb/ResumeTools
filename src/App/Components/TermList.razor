@@ -1,0 +1,7 @@
+@if (Terms.Count == 0) { <p class="muted-text">@EmptyText</p> }
+else { <ul class="term-list term-list--@Variant">@foreach (var term in Terms) { <li>@term</li> }</ul> }
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Terms { get; set; } = [];
+    [Parameter] public string EmptyText { get; set; } = "None";
+    [Parameter] public string Variant { get; set; } = "neutral";
+}

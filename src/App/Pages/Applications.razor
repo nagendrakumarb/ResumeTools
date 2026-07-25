@@ -1,0 +1,149 @@
+@page "/applications"
+@inject JobApplicationStore JobApplications
+@inject IJSRuntime JS
+
+<PageTitle>Applied Jobs & Tailored Resumes | Professional Hub</PageTitle>
+
+<main class="applications-page">
+    <header class="applications-hero">
+        <p class="eyebrow">Private · encrypted · local</p>
+        <h1>Applied jobs and resumes</h1>
+        <p>Review jobs and download the exact tailored resume stored in your mapped local folder.</p>
+    </header>
+
+    <section class="applications-toolbar">
+        <div><strong>Local folder</strong><small>@folderMessage</small></div>
+        <button @onclick="MapFolderAsync" disabled="@(!folderSupported || busy)">Map local folder</button>
+        <button @onclick="LoadAsync" disabled="@(!folderReady || busy)">Refresh</button>
+        <input @bind="filter" @bind:event="oninput" placeholder="Filter jobs, companies, locations, skills" />
+        <select @bind="statusFilter" aria-label="Filter by application status">
+            <option value="">All statuses</option>
+            <option>Applied</option>
+            <option>Completed</option>
+        </select>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <p class="alert alert-danger">@error</p>
+    }
+    else if (busy)
+    {
+        <p class="applications-empty">Reading and decrypting the selected folder…</p>
+    }
+    else if (!VisibleJobs.Any())
+    {
+        <p class="applications-empty">No saved applications match this view. Map the same folder used on the Job Match page.</p>
+    }
+    else
+    {
+        <section class="application-grid">
+            @foreach (var job in VisibleJobs)
+            {
+                <article class="application-card">
+                    <div class="application-card-heading">
+                        <div>
+                            <span class="application-status status-@job.Status.ToLowerInvariant()">@job.Status</span>
+                            <h2>@job.Title</h2>
+                            <p>@job.Company @(!string.IsNullOrWhiteSpace(job.Location) ? $"— {job.Location}" : "")</p>
+                        </div>
+                        <time datetime="@job.RecordedAt">@FormatDate(job.RecordedAt)</time>
+                    </div>
+                    <dl>
+                        <div><dt>Posted</dt><dd>@EmptyAs(job.PostedAt, job.PostedDate)</dd></div>
+                        <div><dt>Source</dt><dd>@EmptyAs(job.Source, "Unknown")</dd></div>
+                        <div><dt>Job ID</dt><dd>@EmptyAs(job.ProviderJobId, "Not supplied")</dd></div>
+                    </dl>
+                    @if (job.Skills.Length > 0)
+                    {
+                        <ul class="application-skills">@foreach (var skill in job.Skills) { <li>@skill</li> }</ul>
+                    }
+                    <div class="application-actions">
+                        @if (ValidUrl(job.Url))
+                        {
+                            <a href="@job.Url" target="_blank" rel="noopener noreferrer">Open application ↗</a>
+                        }
+                        <button @onclick="() => DownloadResumeAsync(job)" disabled="@(!job.HasResume || busy)">
+                            @(job.HasResume ? $"Download {job.ResumeFileName}" : "No tailored resume stored")
+                        </button>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+</main>
+
+@code {
+    private AppliedJobReview[] jobs = [];
+    private string filter = "";
+    private string statusFilter = "";
+    private string folderMessage = "Map the folder used for applied jobs.";
+    private string? error;
+    private bool busy;
+    private bool folderSupported = true;
+    private bool folderReady;
+
+    private IEnumerable<AppliedJobReview> VisibleJobs => jobs
+        .Where(job => string.IsNullOrWhiteSpace(statusFilter) ||
+                      job.Status.Equals(statusFilter, StringComparison.OrdinalIgnoreCase))
+        .Where(job => string.IsNullOrWhiteSpace(filter) ||
+                      $"{job.Title} {job.Company} {job.Location} {job.Source} {string.Join(' ', job.Skills)}"
+                          .Contains(filter, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            ApplyState(await JobApplications.GetStateAsync());
+            if (folderReady) await LoadAsync();
+        }
+        catch (Exception ex) { error = $"Could not access the local application folder: {ex.Message}"; }
+    }
+
+    private async Task MapFolderAsync()
+    {
+        error = null;
+        try
+        {
+            ApplyState(await JobApplications.ChooseFolderAsync());
+            if (folderReady) await LoadAsync();
+        }
+        catch (JSException ex) { error = $"Could not map the folder: {ex.Message}"; }
+    }
+
+    private async Task LoadAsync()
+    {
+        busy = true; error = null;
+        try { jobs = await JobApplications.ListAsync(); }
+        catch (JSException ex) { error = $"Could not read the encrypted application ledger: {ex.Message}"; }
+        finally { busy = false; }
+    }
+
+    private async Task DownloadResumeAsync(AppliedJobReview job)
+    {
+        busy = true; error = null;
+        try
+        {
+            var resume = await JobApplications.GetResumeAsync(job.PostedDate, job.Fingerprint);
+            var downloaded = await JS.InvokeAsync<bool>("professionalHub.files.downloadBase64", resume.FileName,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", resume.Base64);
+            if (!downloaded) throw new InvalidOperationException("The browser could not create the resume download.");
+        }
+        catch (Exception ex) { error = $"Could not download this tailored resume: {ex.Message}"; }
+        finally { busy = false; }
+    }
+
+    private void ApplyState(JobFolderState state)
+    {
+        folderSupported = state.Supported;
+        folderReady = state.Configured && state.PermissionGranted;
+        folderMessage = state.Message;
+    }
+
+    private static bool ValidUrl(string value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https";
+    private static string EmptyAs(string value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value;
+    private static string FormatDate(string value) =>
+        DateTimeOffset.TryParse(value, out var date) ? date.LocalDateTime.ToString("g") : value;
+}

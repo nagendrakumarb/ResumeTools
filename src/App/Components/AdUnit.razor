@@ -1,0 +1,15 @@
+@inject AdSenseService AdSense
+
+<div class="ad-shell" aria-label="Advertisement"><span>Advertisement</span>
+    <ins id="@elementId" class="adsbygoogle" style="display:block" data-ad-client="@PublisherId" data-ad-slot="@Slot" data-ad-format="auto" data-full-width-responsive="true"></ins>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Slot { get; set; } = "";
+    [Parameter] public string PublisherId { get; set; } = "ca-pub-YOUR_PUBLISHER_ID";
+    private readonly string elementId = $"ad-{Guid.NewGuid():N}";
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await AdSense.InitializeAsync(elementId, PublisherId);
+    }
+}

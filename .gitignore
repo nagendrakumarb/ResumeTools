@@ -1,0 +1,10 @@
+/src/App/job-providers.json
+/bin
+/obj
+/tools/JobCatalogBuilder/bin
+/tools/JobCatalogBuilder/obj
+/src/ProfessionalHub.ResumeTools.Core/bin
+/src/App/bin
+/src/App/obj
+/src/ProfessionalHub.ResumeTools.Core/obj
+/.vs

@@ -1,0 +1,23 @@
+<details class="facet-group" open>
+    <summary>@Title</summary>
+    <div>
+        @foreach (var option in Options)
+        {
+            <label>
+                <input type="checkbox" checked="@Selected.Contains(option.Value)"
+                       @onchange="args => Change(option.Value, args)" />
+                <span>@option.Value</span><small>(@option.Count)</small>
+            </label>
+        }
+    </div>
+</details>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public IReadOnlyList<FacetOption> Options { get; set; } = [];
+    [Parameter, EditorRequired] public HashSet<string> Selected { get; set; } = [];
+    [Parameter, EditorRequired] public EventCallback<FacetChange> Changed { get; set; }
+
+    private Task Change(string value, ChangeEventArgs args) =>
+        Changed.InvokeAsync(new FacetChange(value, args.Value is true));
+}
