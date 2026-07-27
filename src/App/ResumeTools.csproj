@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ProfessionalHub.ResumeTools.Core\ProfessionalHub.ResumeTools.Core.csproj" />
+    <ProjectReference Include="..\ProfessionalHub.AI.PortableRuntime\ProfessionalHub.AI.PortableRuntime.csproj" />
   </ItemGroup>
 
   <Target Name="GenerateLocalJobCatalog"

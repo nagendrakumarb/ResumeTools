@@ -1,12 +1,47 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><base href="/" />
-<script>document.querySelector('base').setAttribute('href', location.hostname.endsWith('github.io') ? '/ResumeTools/' : '/');</script>
-<title>Free Resume Match Score | Professional Hub</title><meta name="description" content="Compare your PDF or DOCX resume with a job description using private, offline TF-IDF analysis. No file uploads." /><meta name="theme-color" content="#102a43" />
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8487728962349258" crossorigin="anonymous" data-professionalhub-adsense="true"></script>
-<link rel="canonical" href="https://professionalhub.co.in/" /><link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" /><link rel="stylesheet" href="css/app.css" /><link rel="manifest" href="manifest.webmanifest" /><link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/" />
+  <script>document.querySelector('base').setAttribute('href', location.hostname.endsWith('github.io') ? '/ResumeTools/' : '/');</script>
+  <title>ATS Resume Checker and Job Match | Professional Hub</title>
+  <meta name="description" content="Check ATS readability, compare a PDF or DOCX resume with a job description, and review evidence-based improvements in your browser." />
+  <meta name="theme-color" content="#102a43" />
+  <link rel="canonical" href="https://professionalhub.co.in/" />
+  <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+  <link rel="stylesheet" href="css/app.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
 </head>
-<body><div id="app"><header class="crawler-header"><strong>Professional Hub</strong><nav>Resume Match • Privacy • Offline tools</nav></header><main class="crawler-content">
-<p class="eyebrow">Private • Offline • No uploads</p><h1>Free resume and job description match score</h1><p>Professional Hub helps job seekers compare PDF and DOCX resumes with job descriptions. The tool uses TF-IDF keyword weighting and cosine similarity entirely in your browser.</p>
-<h2>How the resume matcher works</h2><p>Select a resume, paste a job description, and review your match score, matching skills, and missing terms. Your documents stay on your device and are never uploaded to our servers.</p>
-<h2>Private career tools for professionals</h2><p>Use this installable web app online or offline to tailor your resume truthfully for relevant roles.</p><p>Loading the interactive resume analyzer…</p></main></div>
-<div id="blazor-error-ui">An unexpected error occurred. <a href="." class="reload">Reload</a><span class="dismiss">🗙</span></div><script src="js/professionalhub.js"></script><script src="_framework/blazor.webassembly.js"></script><script>navigator.serviceWorker.register(new URL('service-worker.js', document.baseURI));</script></body></html>
+<body>
+  <div id="app">
+    <header class="crawler-header">
+      <strong>Professional Hub</strong>
+      <nav><a href="/">Resume tools</a> &middot; <a href="/resume-guide.html">Resume guide</a> &middot; <a href="/about.html">About</a> &middot; <a href="/privacy.html">Privacy</a></nav>
+    </header>
+    <main class="crawler-content">
+      <p class="eyebrow">Private resume analysis in your browser</p>
+      <h1>Understand how well your resume works for ATS screening and a specific job</h1>
+      <p>Professional Hub is a browser-based resume checker for PDF and DOCX files. It provides two different reviews: a general ATS compatibility scan and a job-description match. Resume text is parsed on the user's device. The tool explains the checks it performs instead of presenting the score as a hiring guarantee.</p>
+      <h2>What the ATS compatibility scan checks</h2>
+      <p>The ATS scan reviews whether common resume information can be extracted, including contact details, recognizable section headings, dates, readable text, measurable achievements, action-oriented language, repetition, sentence clarity, and skill coverage. It also reports document observations such as estimated page count, file size, font sizing, and bold usage.</p>
+      <p>An ATS score is a diagnostic estimate, not a certification. Applicant tracking systems differ between employers. A high score cannot guarantee that a resume will be parsed identically by every employer or that the applicant will receive an interview.</p>
+      <h2>What job matching means</h2>
+      <p>Job matching compares the resume with a job description selected by the user. The browser identifies role-relevant phrases, shows supported terms, and highlights possible gaps. Common boilerplate and ordinary words should not be treated as skills. Users must only add a suggested term when it truthfully describes their experience.</p>
+      <p>The matching percentage measures coverage under this tool's published rules. It is not an employer's score, and Professional Hub is not affiliated with the employers or job platforms whose public listings may be displayed.</p>
+      <h2>Safe resume improvement</h2>
+      <p>The correction workflow is designed to preserve facts. It must not invent employers, qualifications, skills, dates, achievements, or metrics. Suggestions that lack supporting evidence require review. Formatting changes should preserve headings and important visual hierarchy, while optional compaction should avoid silently deleting complete sections.</p>
+      <h2>Privacy and third-party services</h2>
+      <p>Uploaded resume files are processed locally and are not sent to Professional Hub servers. If a user asks the app to import a public job URL or search an external job provider, the browser communicates with that selected third party. Google AdSense is also loaded on the site and may use cookies, web beacons, IP addresses, or other identifiers as described in the <a href="/privacy.html">Privacy Policy</a>.</p>
+      <h2>Learn before using a score</h2>
+      <p>Read the <a href="/resume-guide.html">resume and job-match guide</a> for score interpretation, limitations, safe tailoring examples, and practical advice. You can also read <a href="/about.html">about Professional Hub</a> and the <a href="/terms.html">Terms of Use</a>.</p>
+      <p>Loading the interactive resume analyzer&hellip;</p>
+    </main>
+  </div>
+  <div id="blazor-error-ui">An unexpected error occurred. <a href="." class="reload">Reload</a><span class="dismiss">&times;</span></div>
+  <script src="js/professionalhub.js"></script>
+  <script src="_framework/blazor.webassembly.js"></script>
+  <script>navigator.serviceWorker.register(new URL('service-worker.js', document.baseURI));</script>
+</body>
+</html>

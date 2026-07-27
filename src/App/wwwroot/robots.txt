@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://professionalhub.co.in/sitemap.xml

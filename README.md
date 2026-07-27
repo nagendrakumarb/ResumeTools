@@ -1,21 +1,41 @@
-# Professional Hub Resume Matcher
+# Professional Hub
 
-A .NET 9 Blazor WebAssembly PWA for private, offline resume-to-job matching on `professionalhub.co.in`.
+Professional Hub is a Blazor WebAssembly resume checker and job matcher.
 
-## Run locally
+## Run the website locally
 
 ```powershell
 dotnet run --project src/App/ResumeTools.csproj
 ```
 
-## Configure AdSense
+## Understand the AI plan
 
-Set `PublisherId` and `Slot` on `AdUnit` in `Pages/Home.razor`. AdSense loads only on the production custom domain and only when the values match Google's publisher/slot formats, so placeholder and localhost runs stay quiet.
+Start with the [beginner AI and machine-learning plan](src/App/wwwroot/docs/BEGINNER-AI-PLAN.md).
 
-## Architecture note
+It clearly separates:
 
-ML.NET and EF Core SQLite are server/desktop-oriented and are not supported reliably in browser WebAssembly. This app implements the same TF-IDF plus cosine algorithm in browser-compatible C# and persists non-sensitive analysis summaries in IndexedDB. Resume text is never persisted or uploaded. PDF and DOCX parsing uses PdfPig and Open XML respectively.
+- features we can prepare locally and publish as small static files;
+- features that still require a hosted server;
+- the project responsible for each task;
+- simple examples and direct learning links.
 
-## GitHub Pages
+Use the [detailed implementation guide](src/App/wwwroot/docs/AI-IMPLEMENTATION-GUIDE.md) only after reading the beginner plan.
 
-Set repository **Settings → Pages → Source** to **GitHub Actions**, point the domain DNS records at GitHub Pages, and enable HTTPS after DNS validation. The workflow publishes the PWA and generates `404.html`, `.nojekyll`, and `CNAME`.
+## Simple project map
+
+| Project | Simple purpose |
+|---|---|
+| `src/App` | The Blazor website deployed to GitHub Pages |
+| `ProfessionalHub.ResumeTools.Core` | Shared resume rules used by the website |
+| `ProfessionalHub.AI.Contracts` | Common request and response language for local workers |
+| `ProfessionalHub.AI.Orchestrator` | Sends local tasks to the correct worker and approves outputs |
+| `ProfessionalHub.DotNetAI.Worker` | Builds rules and safely edits DOCX files |
+| `ProfessionalHub.MLNet.Worker` | Trains and evaluates ML.NET models locally |
+| `ProfessionalHub.PythonAI.Worker` | Tries Python models when .NET is not suitable |
+| `ProfessionalHub.AI.PortableRuntime` | Reads approved JSON/ONNX files in browser-safe .NET code |
+
+Only `src/App` is deployed. The other projects are local development tools.
+
+## Important privacy rule
+
+Never commit real resumes, API keys, raw private datasets, virtual environments, or unapproved models.

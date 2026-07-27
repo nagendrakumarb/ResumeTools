@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option csharp_namespace = "ProfessionalHub.AI.Contracts.Grpc";
+package professionalhub.ai;
+
+service AiArtifactWorker {
+  rpc GetCapabilities (CapabilityRequest) returns (CapabilityResponse);
+  rpc ExecuteTask (TaskRequest) returns (TaskResponse);
+  rpc ExportPortablePackage (ExportRequest) returns (TaskResponse);
+}
+
+message CapabilityRequest {
+  string caller = 1;
+}
+
+message CapabilityResponse {
+  bool success = 1;
+  string worker_id = 2;
+  string runtime = 3;
+  repeated string task_ids = 4;
+  string message = 5;
+}
+
+message TaskRequest {
+  string task_id = 1;
+  string input_path = 2;
+  string output_path = 3;
+  map<string, string> options = 4;
+}
+
+message ExportRequest {
+  string task_id = 1;
+  string source_artifact_path = 2;
+  string portable_output_path = 3;
+  string package_version = 4;
+}
+
+message TaskResponse {
+  bool success = 1;
+  string task_id = 2;
+  string message = 3;
+  string artifact_path = 4;
+  string package_type = 5;
+  map<string, double> metrics = 6;
+}
