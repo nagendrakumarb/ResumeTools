@@ -8,3 +8,29 @@
 /src/App/obj
 /src/ProfessionalHub.ResumeTools.Core/obj
 /.vs
+
+# Local AI/ML worker environments and generated outputs
+/python/**/.venv/
+/python/**/__pycache__/
+/python/**/.pytest_cache/
+/python/**/generated/
+*.pyc
+
+# Training data and local artifact factory output are intentionally private.
+/datasets/
+/artifacts/
+
+# Portable packages are promoted deliberately; keep the package index tracked.
+/src/App/wwwroot/ai-packages/*
+!/src/App/wwwroot/ai-packages/manifest.json
+/python/ProfessionalHub.PythonAI.Worker/obj/Debug
+/src/ProfessionalHub.AI.Contracts/bin/Release/net9.0
+/src/ProfessionalHub.AI.Contracts/obj
+/src/ProfessionalHub.AI.Orchestrator/bin/Release/net9.0
+/src/ProfessionalHub.AI.Orchestrator/obj
+/src/ProfessionalHub.AI.PortableRuntime/bin
+/src/ProfessionalHub.AI.PortableRuntime/obj
+/src/ProfessionalHub.DotNetAI.Worker/bin/Release/net9.0
+/src/ProfessionalHub.DotNetAI.Worker/obj
+/src/ProfessionalHub.MLNet.Worker/bin/Release/net9.0
+/src/ProfessionalHub.MLNet.Worker/obj
