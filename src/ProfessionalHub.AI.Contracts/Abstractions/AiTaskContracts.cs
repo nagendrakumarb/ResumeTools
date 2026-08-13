@@ -7,12 +7,17 @@ public static class AiTaskIds
     public const string ContextualTermPlacement = "contextual-term-placement";
     public const string MatchScoring = "match-scoring";
     public const string ResumeSectionClassification = "resume-section-classification";
+    public const string DocumentIntegrityValidation = "document-integrity-validation";
     public const string ContentRetentionRanking = "content-retention-ranking";
     public const string RoleClassification = "role-classification";
     public const string JobRelevanceRanking = "job-relevance-ranking";
     public const string DuplicateJobDetection = "duplicate-job-detection";
     public const string SuspiciousJobDetection = "suspicious-job-detection";
     public const string AchievementQuality = "achievement-quality";
+    public const string EvidenceGroundedRewrite = "evidence-grounded-rewrite";
+    public const string TemplateLayoutUnderstanding = "template-layout-understanding";
+    public const string CorrectionRiskPrediction = "correction-risk-prediction";
+    public const string ModelQualityMonitoring = "model-quality-monitoring";
 
     public static IReadOnlyList<string> All { get; } =
     [
@@ -21,12 +26,17 @@ public static class AiTaskIds
         ContextualTermPlacement,
         MatchScoring,
         ResumeSectionClassification,
+        DocumentIntegrityValidation,
         ContentRetentionRanking,
         RoleClassification,
         JobRelevanceRanking,
         DuplicateJobDetection,
         SuspiciousJobDetection,
-        AchievementQuality
+        AchievementQuality,
+        EvidenceGroundedRewrite,
+        TemplateLayoutUnderstanding,
+        CorrectionRiskPrediction,
+        ModelQualityMonitoring
     ];
 }
 
@@ -62,6 +72,7 @@ public interface IMeaningfulPhraseExtractionTask : IAiTask;
 public interface IContextualTermPlacementTask : IAiTask;
 public interface IMatchScoringTask : IAiTask;
 public interface IResumeSectionClassificationTask : IAiTask;
+public interface IDocumentIntegrityValidationTask : IAiTask;
 public interface IContentRetentionRankingTask : IAiTask;
 public interface IRoleClassificationTask : IAiTask;
 public interface IJobRelevanceRankingTask : IAiTask;

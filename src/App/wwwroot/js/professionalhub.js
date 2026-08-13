@@ -90,35 +90,6 @@ window.professionalHub = {
       });
     }
   },
-  ads: {
-    initialize: async function (elementId, publisherId) {
-      const element = document.getElementById(elementId);
-      const validPublisher = /^ca-pub-\d{16}$/.test(publisherId || "");
-      const validSlot = /^\d+$/.test(element?.dataset.adSlot || "");
-      const allowedHost = location.hostname === "professionalhub.co.in" || location.hostname === "www.professionalhub.co.in";
-      if (!element || !validPublisher || !validSlot || !allowedHost || element.dataset.adInitialized === "true") return false;
-      try {
-        if (!document.querySelector('script[data-professionalhub-adsense]')) {
-          await new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.async = true;
-            script.crossOrigin = "anonymous";
-            script.dataset.professionalhubAdsense = "true";
-            script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(publisherId)}`;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-          });
-        }
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        element.dataset.adInitialized = "true";
-        return true;
-      } catch (error) {
-        console.warn("AdSense initialization deferred.", error);
-        return false;
-      }
-    }
-  },
   jobLedger: {
     fileName: "applied-jobs.phjob",
     openDb: function () {

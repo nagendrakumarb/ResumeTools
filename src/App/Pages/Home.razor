@@ -255,11 +255,12 @@
                     @foreach (var item in fixReport)
                     {
                         <div class="fix-report-item @FixStatusClass(item.Status)">
-                            <strong>@item.Name</strong><span>@item.Status</span><p>@item.Detail</p>
+                            <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
                         </div>
                     }
                 </div>
             }
+            <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
             <p class="generator-note">Generated documents never invent skills, employment, qualifications, or metrics. Review every download before applying.</p>
             <ul class="ats-checks">
                 @foreach (var check in atsResult.Checks)
@@ -298,6 +299,18 @@
                         <label><input type="checkbox" checked="@selectedMatchTerms.Contains(term)" @onchange="args => ToggleMatchTerm(term, args)" />@term</label>
                     }
                 </div>
+                @if (selectedMatchTerms.Count > 0)
+                {
+                    <div class="term-evidence-inputs">
+                        <h4>Add truthful evidence for missing terms</h4>
+                        <p>Each field starts with a polished, term-specific draft. Use it as-is only when it is true, or edit it to reflect your actual work. Your confirmed statement is added to the most relevant experience paragraph.</p>
+                        @foreach (var term in selectedMatchTerms.OrderBy(term => term))
+                        {
+                            <label for="@EvidenceInputId(term)"><strong>@term</strong><textarea id="@EvidenceInputId(term)" rows="2" value="@EvidenceFor(term)" @oninput="args => SetEvidence(term, args.Value?.ToString())"></textarea></label>
+                            <label class="evidence-confirmation"><input type="checkbox" checked="@confirmedMatchTermEvidence.Contains(term)" @onchange="args => ConfirmEvidence(term, args)" /> I confirm this statement accurately describes my experience.</label>
+                        }
+                    </div>
+                }
                 <button class="generate-button" @onclick="TailorForJobAsync" disabled="@(resume is null || isBusy || !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))">Apply selected improvements &amp; download DOCX</button>
                 @if (resume is not null && !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))
                 {
@@ -312,11 +325,12 @@
                         @foreach (var item in matchFixReport)
                         {
                             <div class="fix-report-item @FixStatusClass(item.Status)">
-                                <strong>@item.Name</strong><span>@item.Status</span><p>@item.Detail</p>
+                                <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
                             </div>
                         }
                     </div>
                 }
+                <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
             </div>
         }
     </section>
@@ -366,7 +380,12 @@
     private ResumeFixOptions fixOptions = new();
     private IReadOnlyList<ResumeFixOutcome> fixReport = [];
     private IReadOnlyList<ResumeFixOutcome> matchFixReport = [];
+    private AtsResult? verificationBefore;
+    private AtsResult? verificationAfter;
+    private ResumeIntegrityResult? verificationIntegrity;
     private HashSet<string> selectedMatchTerms = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> matchTermEvidence = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> confirmedMatchTermEvidence = new(StringComparer.OrdinalIgnoreCase);
     private string? matchDownloadStatus;
     private byte[]? lastTailoredResumeBytes;
     private string lastTailoredResumeFileName = "";
@@ -802,6 +821,10 @@
         {
             matchResult = Similarity.Compare(resume!.Text, jobDescription);
             selectedMatchTerms = matchResult.MissingTerms.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            matchTermEvidence.Clear();
+            confirmedMatchTermEvidence.Clear();
+            foreach (var term in selectedMatchTerms)
+                matchTermEvidence[term] = DefaultEvidenceDraft(term);
             matchFixReport = [];
             matchDownloadStatus = null;
             await History.SaveAsync(new AnalysisRecord(DateTimeOffset.UtcNow, matchResult.Score, matchResult.MatchedTerms, matchResult.MissingTerms));
@@ -819,7 +842,49 @@
 
     private void ToggleMatchTerm(string term, ChangeEventArgs args)
     {
-        if (args.Value is true) selectedMatchTerms.Add(term); else selectedMatchTerms.Remove(term);
+        if (args.Value is true) selectedMatchTerms.Add(term);
+        else
+        {
+            selectedMatchTerms.Remove(term);
+            matchTermEvidence.Remove(term);
+            confirmedMatchTermEvidence.Remove(term);
+        }
+    }
+
+    private string EvidenceFor(string term) => matchTermEvidence.GetValueOrDefault(term, "");
+    private void SetEvidence(string term, string? value)
+    {
+        matchTermEvidence[term] = value ?? "";
+        confirmedMatchTermEvidence.Remove(term);
+    }
+    private void ConfirmEvidence(string term, ChangeEventArgs args)
+    {
+        if (args.Value is true) confirmedMatchTermEvidence.Add(term);
+        else confirmedMatchTermEvidence.Remove(term);
+    }
+    private static string EvidenceInputId(string term) => "evidence-" + string.Concat(term.Where(char.IsLetterOrDigit)).ToLowerInvariant();
+    private static string DefaultEvidenceDraft(string term)
+    {
+        var lower = term.ToLowerInvariant();
+        if (lower.Contains("angular") || lower.Contains("react") || lower.Contains("vue"))
+            return $"Developed and maintained user-facing application features using {term}, collaborating with the team to deliver reliable releases.";
+        if (lower.Contains("aws") || lower.Contains("azure") || lower.Contains("gcp") || lower.Contains("cloud"))
+            return $"Used {term} to support deployment, configuration, and reliable operation of application services.";
+        if (lower.Contains("graphql") || lower.Contains("api"))
+            return $"Designed and integrated {term} interfaces to support secure data exchange between application services.";
+        if (lower.Contains("kubernetes") || lower.Contains("docker"))
+            return $"Used {term} to package, deploy, and support application services across development environments.";
+        if (lower.Contains("observability") || lower.Contains("monitor"))
+            return $"Improved {term} by reviewing application signals, investigating issues, and supporting reliable service operation.";
+        if (lower.Contains("postgres") || lower.Contains("sql") || lower.Contains("database"))
+            return $"Used {term} to design, query, and maintain data needed by application features and reporting.";
+        if (lower.Contains("scalability") || lower.Contains("distributed"))
+            return $"Contributed to {term} improvements by designing services and integrations that supported reliable growth.";
+        if (lower.Contains("leadership") || lower.Contains("communication"))
+            return $"Applied {term} by coordinating with colleagues, clarifying technical work, and supporting shared delivery goals.";
+        if (lower.Contains("quality"))
+            return $"Applied {term} practices through peer review, testing, and careful validation before releasing changes.";
+        return $"Applied {term} in relevant project work, collaborating with the team to deliver reliable outcomes.";
     }
 
     private async Task TailorForJobAsync()
@@ -831,20 +896,21 @@
         await InvokeAsync(StateHasChanged); await Task.Yield();
         try
         {
+            EnableSafeForceCorrections();
             var result = Improver.TailorForJobWithReport(resume, jobDescription, new JobTailoringOptions
             {
                 AtsFixes = fixOptions,
-                SelectedTerms = selectedMatchTerms.ToArray()
+                SelectedTerms = selectedMatchTerms.ToArray(),
+                EvidenceStatements = matchTermEvidence
+                    .Where(pair => confirmedMatchTermEvidence.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase)
             });
+            var verifiedTailoredResume = await CaptureCorrectionVerificationAsync(resume, result, "Job-tailored resume.docx");
             matchFixReport = result.Outcomes;
             var outputName = $"Job-Tailored-{Path.GetFileNameWithoutExtension(resume.OriginalFileName)}.docx";
             lastTailoredResumeBytes = result.Bytes;
             lastTailoredResumeFileName = outputName;
-            await using (var tailoredStream = new MemoryStream(result.Bytes))
-            {
-                var tailoredResume = await Parser.ParseAsync(tailoredStream, outputName);
-                matchResult = Similarity.Compare(tailoredResume.Text, jobDescription);
-            }
+            matchResult = Similarity.Compare(verifiedTailoredResume.Text, jobDescription);
             var downloaded = await JS.InvokeAsync<bool>("professionalHub.files.downloadBase64", outputName,
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Convert.ToBase64String(result.Bytes));
             if (!downloaded) throw new InvalidOperationException("The browser could not create the download.");
@@ -860,7 +926,9 @@
         isBusy=true; error=null; downloadStatus=null; fixReport=[]; busyTitle="Fixing original resume"; busyDetail="Preserving layout while applying safe text corrections..."; await InvokeAsync(StateHasChanged); await Task.Yield();
         try
         {
+            EnableSafeForceCorrections();
             var result = Improver.ImproveOriginalWithReport(resume, fixOptions);
+            await CaptureCorrectionVerificationAsync(resume, result, "Fixed original.docx");
             var bytes = result.Bytes;
             fixReport = result.Outcomes;
             var outputName = resume.FileType == "PDF"
@@ -887,10 +955,10 @@
         await Task.Yield();
         try
         {
+            EnableSafeForceCorrections();
             var result = Improver.ImproveOriginalWithReport(resume, fixOptions);
             var workingName = $"Rechecked-{Path.GetFileNameWithoutExtension(resume.OriginalFileName)}.docx";
-            await using var correctedStream = new MemoryStream(result.Bytes);
-            resume = await Parser.ParseAsync(correctedStream, workingName);
+            resume = await CaptureCorrectionVerificationAsync(resume, result, workingName);
             atsResult = Ats.Analyze(resume);
             matchResult = null;
             fixReport = result.Outcomes;
@@ -907,10 +975,40 @@
         }
     }
 
+    private async Task<ParsedResume> CaptureCorrectionVerificationAsync(
+        ParsedResume source,
+        ResumeFixResult result,
+        string outputName)
+        => await CaptureCorrectionVerificationAsync(source, result.Bytes, result.Integrity, outputName);
+
+    private async Task<ParsedResume> CaptureCorrectionVerificationAsync(
+        ParsedResume source,
+        CorrectedTemplateConversionResult result,
+        string outputName)
+        => await CaptureCorrectionVerificationAsync(source, result.Bytes, result.Integrity, outputName);
+
+    private async Task<ParsedResume> CaptureCorrectionVerificationAsync(
+        ParsedResume source,
+        byte[] bytes,
+        ResumeIntegrityResult? integrity,
+        string outputName)
+    {
+        verificationBefore = Ats.Analyze(source);
+        await using var outputStream = new MemoryStream(bytes);
+        var generated = await Parser.ParseAsync(outputStream, outputName);
+        verificationAfter = Ats.Analyze(generated);
+        verificationIntegrity = integrity;
+        return generated;
+    }
+
     private static string FixStatusClass(string status) =>
         status.StartsWith("Applied—", StringComparison.Ordinal) ? "review" :
         status == "Applied" ? "applied" :
-        status == "Already satisfied" ? "satisfied" : "manual";
+        status is "Already satisfied" or "Verified" ? "satisfied" : "manual";
+
+    private static string FixStatusLabel(string status) =>
+        status.StartsWith("Applied—", StringComparison.Ordinal) ? "Partially applied" :
+        status == "Manual action required" ? "Requires manual review" : status;
 
     private async Task GenerateTemplateAsync()
     {
@@ -918,8 +1016,10 @@
         isBusy=true; busyTitle="Applying resume template"; busyDetail="Rebuilding the same factual content with ATS-safe styles..."; await InvokeAsync(StateHasChanged); await Task.Yield();
         try
         {
+            EnableSafeForceCorrections();
             fixReport=[];
             var result = Improver.GenerateWithReport(resume, selectedTemplate, fixOptions);
+            await CaptureCorrectionVerificationAsync(resume, result, $"Corrected-Resume-{selectedTemplate}.docx");
             fixReport = result.Outcomes;
             await JS.InvokeVoidAsync("professionalHub.files.downloadBase64", $"Corrected-Resume-{selectedTemplate}.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Convert.ToBase64String(result.Bytes));
             downloadStatus = $"Corrected {selectedTemplate} template downloaded ({result.Bytes.Length / 1024d:N0} KB).";
@@ -952,8 +1052,10 @@
         isBusy=true; busyTitle="Applying uploaded template"; busyDetail="Mapping resume content to the supplied design..."; await InvokeAsync(StateHasChanged); await Task.Yield();
         try
         {
+            EnableSafeForceCorrections();
             fixReport=[];
             var result=Improver.GenerateFromUploadedTemplateWithReport(resume,uploadedTemplate,imageTemplateAnalysis,fixOptions); uploadedTemplateStatus=result.Message;
+            await CaptureCorrectionVerificationAsync(resume, result, "Resume-uploaded-template.docx");
             fixReport=result.Outcomes;
             await JS.InvokeVoidAsync("professionalHub.files.downloadBase64","Resume-uploaded-template.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",Convert.ToBase64String(result.Bytes));
             downloadStatus = $"Corrected uploaded-template resume downloaded ({result.Bytes.Length / 1024d:N0} KB).";

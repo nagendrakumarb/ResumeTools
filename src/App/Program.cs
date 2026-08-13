@@ -8,7 +8,6 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-builder.Services.AddScoped<AdSenseService>();
 builder.Services.AddScoped<ResumeParserService>();
 builder.Services.AddScoped<SimilarityService>();
 builder.Services.AddScoped<AtsCompatibilityService>();

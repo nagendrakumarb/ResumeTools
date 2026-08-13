@@ -1,0 +1,17 @@
+{
+  "requestId": "section-classifier-v1",
+  "taskId": "resume-section-classification",
+  "packageId": "resume-section-classifier",
+  "version": "1.0.0",
+  "workerEndpoint": "http://localhost:5101",
+  "inputPath": "datasets/resume-sections",
+  "workingArtifactPath": "artifacts/section-classifier-v1",
+  "runtime": "onnx-web",
+  "entryPoint": "section-classifier.onnx",
+  "minimumMetric": 0.92,
+  "maximumPackageMb": 25,
+  "options": {
+    "exportFormat": "onnx",
+    "includeLabels": "true"
+  }
+}

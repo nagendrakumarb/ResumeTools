@@ -1,0 +1,49 @@
+@if (Before is not null && After is not null)
+{
+    <section class="correction-verification" aria-live="polite">
+        <div class="verification-heading">
+            <div><span>POST-CORRECTION VERIFICATION</span><h3>Before and after</h3></div>
+            <strong class="@IntegrityClass">@IntegrityLabel</strong>
+        </div>
+        <div class="verification-grid">
+            <div><span>Overall ATS</span><strong>@Before.Score.ToString("0")% → @After.Score.ToString("0")%</strong><small>Grade @Before.Grade → @After.Grade</small></div>
+            @foreach (var name in TrackedMetrics)
+            {
+                var before = Before.Checks.FirstOrDefault(check => check.Name == name);
+                var after = After.Checks.FirstOrDefault(check => check.Name == name);
+                if (before is not null && after is not null)
+                {
+                    <div><span>@name</span><strong>@before.Score.ToString("0")% → @after.Score.ToString("0")%</strong><small>@DeltaText(before.Score, after.Score)</small></div>
+                }
+            }
+            <div><span>Lost protected facts</span><strong>@(Integrity?.MissingFacts.Count ?? 0)</strong><small>Dates, links, contacts and metrics</small></div>
+            <div><span>Unsupported identity facts</span><strong>@(Integrity?.UnsupportedFacts.Count ?? 0)</strong><small>New contact, date or link values</small></div>
+            <div><span>Missing sections</span><strong>@(Integrity?.MissingSections.Count ?? 0)</strong><small>@MissingSectionText</small></div>
+        </div>
+        @if (Integrity is { IsVerified: false })
+        {
+            <p class="verification-warning"><strong>Manual review recommended:</strong> the download remains available. Compare the listed integrity warnings with the original before using it.</p>
+        }
+        else
+        {
+            <p class="verification-ok">No protected facts or recognized source sections were lost.</p>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public AtsResult? Before { get; set; }
+    [Parameter] public AtsResult? After { get; set; }
+    [Parameter] public ResumeIntegrityResult? Integrity { get; set; }
+
+    private static readonly string[] TrackedMetrics =
+        ["Page count", "Bold usage", "Professional summary", "Soft skills", "Skills efficiency ratio"];
+    private string IntegrityLabel => Integrity?.IsVerified == true ? "Integrity verified" : "Review needed";
+    private string IntegrityClass => Integrity?.IsVerified == true ? "verified" : "review";
+    private string MissingSectionText => Integrity?.MissingSections.Count > 0
+        ? string.Join(", ", Integrity.MissingSections)
+        : "All recognized sections retained";
+    private static string DeltaText(double before, double after) => after > before
+        ? $"Improved by {after - before:0} points"
+        : after < before ? $"Reduced by {before - after:0} points" : "Unchanged";
+}

@@ -17,6 +17,11 @@ public sealed class DotNetWorkerCapabilities : IAiCapabilityProvider
         AiTaskIds.JobRelevanceRanking,
         AiTaskIds.DuplicateJobDetection,
         AiTaskIds.SuspiciousJobDetection,
-        AiTaskIds.AchievementQuality
+        AiTaskIds.AchievementQuality,
+        AiTaskIds.DocumentIntegrityValidation,
+        AiTaskIds.EvidenceGroundedRewrite,
+        AiTaskIds.TemplateLayoutUnderstanding,
+        AiTaskIds.CorrectionRiskPrediction,
+        AiTaskIds.ModelQualityMonitoring
     ];
 }

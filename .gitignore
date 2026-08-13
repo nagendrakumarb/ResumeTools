@@ -23,6 +23,8 @@
 # Portable packages are promoted deliberately; keep the package index tracked.
 /src/App/wwwroot/ai-packages/*
 !/src/App/wwwroot/ai-packages/manifest.json
+!/src/App/wwwroot/ai-packages/*/
+!/src/App/wwwroot/ai-packages/**
 /python/ProfessionalHub.PythonAI.Worker/obj/Debug
 /src/ProfessionalHub.AI.Contracts/bin/Release/net9.0
 /src/ProfessionalHub.AI.Contracts/obj
@@ -34,3 +36,4 @@
 /src/ProfessionalHub.DotNetAI.Worker/obj
 /src/ProfessionalHub.MLNet.Worker/bin/Release/net9.0
 /src/ProfessionalHub.MLNet.Worker/obj
+/src/ProfessionalHub.AI.Orchestrator/bin/Debug/net9.0

@@ -11,6 +11,7 @@ public sealed record ResumeTemplateOption(string Id, string Name, string Descrip
 
 public sealed partial class ResumeImprovementService
 {
+    private readonly ResumeIntegrityService integrityService = new();
     private const string Navy = "17324D";
     private const string Teal = "0F766E";
     private const string Gray = "52667A";
@@ -44,7 +45,7 @@ public sealed partial class ResumeImprovementService
         options ??= new ResumeFixOptions();
         var corrected = PrepareCorrectedResume(resume, options);
         var bytes = ApplyCorrectionLayout(Generate(corrected, templateId), options);
-        return new ResumeFixResult(bytes, SelectedOutcomes(options, pdf: false));
+        return AuditResult(resume, bytes, SelectedOutcomes(options, pdf: false));
     }
 
     public byte[] ImproveOriginal(ParsedResume resume, ResumeFixOptions? options = null)
@@ -55,9 +56,12 @@ public sealed partial class ResumeImprovementService
         options ??= new ResumeFixOptions();
         if (resume.FileType.Equals("PDF", StringComparison.OrdinalIgnoreCase))
         {
-            var bytes = ApplyCorrectionLayout(Generate(PrepareCorrectedResume(resume, options)), options);
+            var corrected = PrepareCorrectedResume(resume, options);
+            var bytes = resume.PdfLayout?.ColumnSplitX is not null
+                ? GenerateFromPdfLayout(corrected)
+                : ApplyCorrectionLayout(Generate(corrected), options);
             var pdfOutcomes = SelectedOutcomes(options, pdf: true);
-            return new ResumeFixResult(bytes, pdfOutcomes);
+            return AuditResult(resume, bytes, pdfOutcomes);
         }
         if (!resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))
             throw new NotSupportedException("Only PDF and DOCX resumes can be corrected.");
@@ -74,7 +78,7 @@ public sealed partial class ResumeImprovementService
             outcomes = ApplyInPlaceDocxFixes(document, resume, options);
             document.MainDocumentPart?.Document.Save();
         }
-        return new ResumeFixResult(stream.ToArray(), outcomes);
+        return AuditResult(resume, stream.ToArray(), outcomes);
     }
 
     public ResumeFixResult TailorForJobWithReport(ParsedResume resume, string jobDescription, JobTailoringOptions? options = null)
@@ -99,7 +103,7 @@ public sealed partial class ResumeImprovementService
         {
             outcomes.Add(new("Job-specific terminology", "Already satisfied",
                 "No job-specific terms were selected for application."));
-            return new ResumeFixResult(baseline.Bytes, outcomes);
+            return AuditResult(resume, baseline.Bytes, WithoutIntegrityAudit(outcomes));
         }
 
         var evidenceText = StripGeneratedTailoringText(resume.Text);
@@ -136,13 +140,11 @@ public sealed partial class ResumeImprovementService
                         if (!termsToAdd.Contains(term, StringComparer.OrdinalIgnoreCase)) termsToAdd.Add(term);
                     }
                 }
-                var placements = PlanContextualPlacements(body, termsToAdd);
-                foreach (var placement in placements.Where(item => item.Paragraph is not null)
-                             .GroupBy(item => item.Paragraph!))
+                var placements = PlanContextualPlacements(body, termsToAdd, options.EvidenceStatements);
+                foreach (var placement in placements.Where(item => item.Paragraph is not null))
                 {
-                    var terms = placement.Select(item => item.Term).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-                    AppendContextualTerms(placement.Key, terms, placement.First().PlacementType);
-                    applied.AddRange(terms);
+                    AppendContextualTerms(placement.Paragraph!, [placement.Term], placement.PlacementType, placement.EvidenceStatement);
+                    applied.Add(placement.Term);
                 }
                 withheld.AddRange(placements.Where(item => item.Paragraph is null).Select(item => item.Term));
                 document.MainDocumentPart?.Document.Save();
@@ -157,13 +159,19 @@ public sealed partial class ResumeImprovementService
                 "Placed in the most relevant existing resume section while retaining paragraph and run formatting. Verify that the contextual statement accurately describes your experience."));
         foreach (var term in withheld)
             outcomes.Add(new($"Target term: {term}", "Manual action required",
-                "The original resume did not contain credible supporting evidence for this requirement. It was withheld to prevent an unsupported claim or keyword stuffing."));
+                "Add a short, truthful evidence sentence containing this term, then apply again. It was withheld to prevent an unsupported claim or keyword stuffing."));
         outcomes.Add(new("Job-match compatibility", withheld.Count == 0 ? "Applied—review recommended" : "Partially applied",
             withheld.Count == 0
                 ? $"{applied.Count} selected terms were added and {alreadyPresent.Distinct(StringComparer.OrdinalIgnoreCase).Count()} were already present. Review for truthfulness, then recalculate the match."
                 : $"{applied.Count} selected terms were added; {withheld.Count} require manual placement because no reliable target section was found."));
-        return new ResumeFixResult(stream.ToArray(), outcomes);
+        return AuditResult(resume, stream.ToArray(), WithoutIntegrityAudit(outcomes));
     }
+
+    private ResumeFixResult AuditResult(ParsedResume source, byte[] bytes, IReadOnlyList<ResumeFixOutcome> outcomes) =>
+        integrityService.Audit(source, bytes, WithoutIntegrityAudit(outcomes));
+
+    private static IReadOnlyList<ResumeFixOutcome> WithoutIntegrityAudit(IEnumerable<ResumeFixOutcome> outcomes) =>
+        outcomes.Where(outcome => !outcome.Name.Equals("Document integrity audit", StringComparison.OrdinalIgnoreCase)).ToList();
 
     private static string StripGeneratedTailoringText(string value) =>
         GeneratedTailoringPattern.Replace(value, " ");
@@ -301,8 +309,11 @@ public sealed partial class ResumeImprovementService
 
         if (options.BalanceBoldUsage && !options.ForceBalanceBoldUsage)
         {
-            outcomes.Add(new("Balance bold emphasis", "Manual action required",
-                "Not changed automatically because bold can encode the uploaded resume's visual hierarchy. Review emphasis in Word if the ATS metric remains low."));
+            var result = ApplySafeBalancedBold(document);
+            outcomes.Add(new("Balance bold emphasis", result.Unbolded > 0 ? "Applied" : "Already satisfied",
+                result.Unbolded > 0
+                    ? $"Preserved headings, identity details, employers, dates, and inline labels; removed bold from {result.Unbolded} clearly body-text run{(result.Unbolded == 1 ? "" : "s")}."
+                    : "No clearly body-text bold could be removed safely; the existing visual hierarchy was retained."));
         }
 
         if (options.CompactPageLayout && options.ForceCompactPageLayout)
@@ -320,8 +331,12 @@ public sealed partial class ResumeImprovementService
 
         if (options.CompactPageLayout && !options.ForceCompactPageLayout)
         {
-            outcomes.Add(new("Compact 1–2 page layout", "Manual action required",
-                "Not changed automatically because global font, spacing, margin, or empty-paragraph edits would alter the uploaded layout. Shorten lower-priority content manually when the resume exceeds two pages."));
+            var result = ApplySafeCompactLayout(document);
+            var changed = result.EmptyParagraphs + result.SpacingAdjusted;
+            outcomes.Add(new("Compact 1–2 page layout", changed > 0 ? "Applied" : "Already satisfied",
+                changed > 0
+                    ? $"Preserved all resume content and page geometry. Removed {result.EmptyParagraphs} redundant empty paragraph{(result.EmptyParagraphs == 1 ? "" : "s")} and safely reduced excessive spacing in {result.SpacingAdjusted} paragraph{(result.SpacingAdjusted == 1 ? "" : "s")}. Enable force compaction only if stronger font and margin changes are acceptable."
+                    : "No redundant empty paragraphs or excessive body spacing were found. Enable force compaction only when stronger format-preserving compression is required."));
         }
 
         if (options.ImproveReadingClarity)
@@ -342,6 +357,93 @@ public sealed partial class ResumeImprovementService
 
     private sealed record CompactResult(int Paragraphs, int EmptyParagraphs, int SpacingAdjusted, int FontRunsAdjusted, int SectionsAdjusted);
     private sealed record BoldResult(int Preserved, int Unbolded, int Migrated);
+
+    private static CompactResult ApplySafeCompactLayout(WordprocessingDocument document)
+    {
+        var body = document.MainDocumentPart?.Document.Body;
+        if (body is null) return new(0, 0, 0, 0, 0);
+
+        var paragraphs = body.Descendants<Paragraph>().ToList();
+        var removedEmpty = 0;
+        var previousWasEmpty = false;
+        foreach (var paragraph in paragraphs.ToList())
+        {
+            var isEmpty = string.IsNullOrWhiteSpace(paragraph.InnerText);
+            if (isEmpty && previousWasEmpty && paragraph.Parent is not TableCell)
+            {
+                paragraph.Remove();
+                removedEmpty++;
+                continue;
+            }
+            previousWasEmpty = isEmpty;
+        }
+
+        var spacingAdjusted = 0;
+        foreach (var paragraph in body.Descendants<Paragraph>()
+                     .Where(item => !string.IsNullOrWhiteSpace(item.InnerText) &&
+                                    !IsCompactionProtectedParagraph(item)))
+        {
+            var spacing = paragraph.ParagraphProperties?.SpacingBetweenLines;
+            if (spacing is null) continue;
+            var changed = false;
+            if (int.TryParse(spacing.Before?.Value, out var before) && before > 120)
+            {
+                spacing.Before = "120";
+                changed = true;
+            }
+            if (int.TryParse(spacing.After?.Value, out var after) && after > 120)
+            {
+                spacing.After = "120";
+                changed = true;
+            }
+            if (int.TryParse(spacing.Line?.Value, out var line) &&
+                spacing.LineRule?.Value == LineSpacingRuleValues.Auto && line > 276)
+            {
+                spacing.Line = "276";
+                changed = true;
+            }
+            if (changed) spacingAdjusted++;
+        }
+
+        return new(paragraphs.Count - removedEmpty, removedEmpty, spacingAdjusted, 0, 0);
+    }
+
+    private static BoldResult ApplySafeBalancedBold(WordprocessingDocument document)
+    {
+        var body = document.MainDocumentPart?.Document.Body;
+        if (body is null) return new(0, 0, 0);
+
+        var preserved = 0;
+        var unbolded = 0;
+        foreach (var paragraph in body.Descendants<Paragraph>()
+                     .Where(item => !string.IsNullOrWhiteSpace(item.InnerText)))
+        {
+            var text = paragraph.InnerText.Trim();
+            var protectedParagraph = IsStructuralOrIdentityParagraph(paragraph) ||
+                                     HasInlineResumeLabel(paragraph) ||
+                                     text.Length < 90 ||
+                                     !LooksLikeBodySentence(text);
+            if (protectedParagraph)
+            {
+                preserved++;
+                continue;
+            }
+
+            foreach (var run in paragraph.Descendants<Run>())
+            {
+                var properties = run.RunProperties;
+                if (properties?.Bold is null || string.IsNullOrWhiteSpace(run.InnerText)) continue;
+                properties.Bold.Remove();
+                properties.BoldComplexScript?.Remove();
+                unbolded++;
+            }
+        }
+
+        foreach (var paragraph in body.Descendants<Paragraph>().Where(HasInlineResumeLabel))
+            PreserveInlineResumeLabel(paragraph);
+
+        return new(preserved, unbolded, 0);
+    }
 
     private static CompactResult ForceCompactLayout(WordprocessingDocument document)
     {
@@ -673,9 +775,9 @@ public sealed partial class ResumeImprovementService
         paragraph.Append(run);
     }
 
-    private sealed record TermPlacement(string Term, Paragraph? Paragraph, string PlacementType);
+    private sealed record TermPlacement(string Term, Paragraph? Paragraph, string PlacementType, string? EvidenceStatement = null);
 
-    private static List<TermPlacement> PlanContextualPlacements(Body body, IReadOnlyCollection<string> terms)
+    private static List<TermPlacement> PlanContextualPlacements(Body body, IReadOnlyCollection<string> terms, IReadOnlyDictionary<string, string> evidenceStatements)
     {
         var paragraphs = body.Descendants<Paragraph>().ToList();
         var skillsHeading = paragraphs.FirstOrDefault(IsSkillsOrStrengthsHeading);
@@ -692,10 +794,24 @@ public sealed partial class ResumeImprovementService
 
         foreach (var term in terms)
         {
-            if (!HasCredibleEvidence(body.InnerText, term))
+            evidenceStatements.TryGetValue(term, out var suppliedEvidence);
+            suppliedEvidence = NormalizeEvidenceStatement(suppliedEvidence);
+            var hasSuppliedEvidence = IsValidEvidenceStatement(suppliedEvidence, term);
+            if (!HasCredibleEvidence(body.InnerText, term) && !hasSuppliedEvidence)
             {
                 placements.Add(new(term, null, "unsupported"));
                 continue;
+            }
+
+            if (hasSuppliedEvidence)
+            {
+                var target = FindBestEvidenceParagraph(evidenceParagraphs, term, paragraphLoad) ?? summaryParagraph;
+                if (target is not null)
+                {
+                    placements.Add(new(term, target, "user-evidence", suppliedEvidence));
+                    paragraphLoad[target] = paragraphLoad.GetValueOrDefault(target) + 1;
+                    continue;
+                }
             }
 
             if (IsSummaryCompetency(term) && summaryParagraph is not null)
@@ -740,6 +856,31 @@ public sealed partial class ResumeImprovementService
         return placements;
     }
 
+    private static Paragraph? FindBestEvidenceParagraph(IReadOnlyCollection<Paragraph> evidenceParagraphs, string term, IReadOnlyDictionary<Paragraph, int> paragraphLoad)
+    {
+        var anchors = ContextAnchors(term);
+        return evidenceParagraphs.Select(paragraph => new
+            {
+                Paragraph = paragraph,
+                AnchorScore = anchors.Count(anchor => paragraph.InnerText.Contains(anchor, StringComparison.OrdinalIgnoreCase)),
+                Load = paragraphLoad.GetValueOrDefault(paragraph)
+            })
+            .OrderByDescending(candidate => candidate.AnchorScore)
+            .ThenBy(candidate => candidate.Load)
+            .ThenBy(candidate => candidate.Paragraph.InnerText.Length)
+            .FirstOrDefault()?.Paragraph;
+    }
+
+    private static string? NormalizeEvidenceStatement(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var normalized = Regex.Replace(value.Trim(), @"\s+", " ");
+        return normalized.Length <= 360 ? normalized : normalized[..360].TrimEnd();
+    }
+
+    private static bool IsValidEvidenceStatement(string? value, string term) =>
+        value is { Length: >= 12 } && ContainsTerm(value, term);
+
     private static bool HasCredibleEvidence(string resumeText, string term)
     {
         if (ContainsTerm(resumeText, term)) return true;
@@ -769,12 +910,13 @@ public sealed partial class ResumeImprovementService
                value.Equals("ABOUT ME", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void AppendContextualTerms(Paragraph paragraph, IReadOnlyCollection<string> terms, string placementType)
+    private static void AppendContextualTerms(Paragraph paragraph, IReadOnlyCollection<string> terms, string placementType, string? evidenceStatement = null)
     {
         if (terms.Count == 0) return;
         var separator = string.IsNullOrWhiteSpace(paragraph.InnerText) ? "" : " ";
         var value = placementType switch
         {
+            "user-evidence" => $"{separator}{evidenceStatement}",
             "skills" => $"{separator}| {string.Join(" | ", terms)}",
             "summary" => $"{separator}Demonstrated strengths include {NaturalLanguageList(terms)}.",
             "technology-evidence" => $"{separator}Applied {NaturalLanguageList(terms)} in relevant technical delivery.",
@@ -1138,7 +1280,14 @@ public sealed partial class ResumeImprovementService
         var bytes = ApplyCorrectionLayout(conversion.Bytes, options);
         var outcomes = SelectedOutcomes(options, pdf: false);
         var message = conversion.Message + " Selected ATS corrections were applied before the content was mapped, and safe layout corrections were applied after conversion.";
-        return new CorrectedTemplateConversionResult(bytes, conversion.ExactLayout, message, outcomes);
+        var audited = AuditResult(resume, bytes, outcomes);
+        return new CorrectedTemplateConversionResult(
+            audited.Bytes,
+            conversion.ExactLayout,
+            message,
+            audited.Outcomes,
+            audited.Status,
+            audited.Integrity);
     }
 
     public byte[] Generate(ParsedResume resume)
@@ -1173,6 +1322,91 @@ public sealed partial class ResumeImprovementService
             main.Document.Save();
         }
         return stream.ToArray();
+    }
+
+    private static byte[] GenerateFromPdfLayout(ParsedResume resume)
+    {
+        var layout = resume.PdfLayout ?? throw new InvalidOperationException("PDF layout metadata is required.");
+        var split = layout.ColumnSplitX ?? layout.PageWidth * 0.35;
+        var leftLines = layout.Lines.Where(line => line.Left + line.Width / 2d < split)
+            .OrderBy(line => line.Page).ThenByDescending(line => line.Bottom).ToArray();
+        var rightLines = layout.Lines.Where(line => line.Left + line.Width / 2d >= split)
+            .OrderBy(line => line.Page).ThenByDescending(line => line.Bottom).ToArray();
+
+        using var stream = new MemoryStream();
+        using (var document = WordprocessingDocument.Create(stream, WordprocessingDocumentType.Document, true))
+        {
+            var main = document.AddMainDocumentPart();
+            AddStyles(main); AddNumbering(main);
+            var body = new Body(); main.Document = new Document(body);
+            var usableWidth = 10440;
+            var rightStart = rightLines.Length == 0 ? split : rightLines.Min(line => line.Left);
+            var visualColumnRatio = Math.Clamp(rightStart / layout.PageWidth - 0.06, 0.34, 0.36);
+            var leftWidth = Math.Clamp((int)Math.Round(usableWidth * visualColumnRatio), 3300, 4700);
+            var rightWidth = usableWidth - leftWidth - 260;
+            var table = new Table(
+                new TableProperties(
+                    new TableWidth { Width = usableWidth.ToString(), Type = TableWidthUnitValues.Dxa },
+                    new TableLayout { Type = TableLayoutValues.Fixed },
+                    new TableBorders(
+                        new TopBorder { Val = BorderValues.Nil }, new LeftBorder { Val = BorderValues.Nil },
+                        new BottomBorder { Val = BorderValues.Nil }, new RightBorder { Val = BorderValues.Nil },
+                        new InsideHorizontalBorder { Val = BorderValues.Nil }, new InsideVerticalBorder { Val = BorderValues.Nil })),
+                new TableGrid(new GridColumn { Width = leftWidth.ToString() }, new GridColumn { Width = rightWidth.ToString() }));
+            var leftCell = PdfLayoutCell(leftWidth, 160);
+            var rightCell = PdfLayoutCell(rightWidth, 220);
+            AppendPdfLayoutLines(leftCell, leftLines, resume.AverageFontSize, isLeftColumn: true);
+            AppendPdfLayoutLines(rightCell, rightLines, resume.AverageFontSize, isLeftColumn: false);
+            table.Append(new TableRow(leftCell, rightCell));
+            body.Append(table);
+            body.Append(new SectionProperties(
+                new PageSize { Width = 12240, Height = 15840 },
+                new PageMargin { Top = 360, Right = 620, Bottom = 360, Left = 620, Header = 180, Footer = 180 }));
+            main.Document.Save();
+        }
+        return stream.ToArray();
+    }
+
+    private static TableCell PdfLayoutCell(int width, int padding) => new(
+        new TableCellProperties(
+            new TableCellWidth { Width = width.ToString(), Type = TableWidthUnitValues.Dxa },
+            new TableCellMargin(
+                new LeftMargin { Width = padding.ToString(), Type = TableWidthUnitValues.Dxa },
+                new RightMargin { Width = padding.ToString(), Type = TableWidthUnitValues.Dxa }),
+            new TableCellVerticalAlignment { Val = TableVerticalAlignmentValues.Top }));
+
+    private static void AppendPdfLayoutLines(TableCell cell, IReadOnlyList<PdfLayoutLine> lines, double averageFontSize, bool isLeftColumn)
+    {
+        var previousPage = lines.Count == 0 ? 1 : lines[0].Page;
+        foreach (var line in lines)
+        {
+            var text = Clean(line.Text);
+            if (text.Length == 0) continue;
+            var isHeading = line.Bold && (line.FontSize >= Math.Max(averageFontSize * 1.08, 11.5) || text.Length < 36);
+            var isName = isLeftColumn && line.Page == 1 && line.Bottom > 0 && line.FontSize >= averageFontSize * 1.35;
+            var paragraph = new Paragraph();
+            var properties = new ParagraphProperties(
+                new SpacingBetweenLines
+                {
+                    Before = isHeading ? "120" : "20",
+                    After = isHeading ? "60" : "20",
+                    Line = "240",
+                    LineRule = LineSpacingRuleValues.Auto
+                },
+                new KeepNext { Val = isHeading });
+            if (line.Page != previousPage && isLeftColumn)
+                properties.PageBreakBefore = new PageBreakBefore();
+            paragraph.Append(properties);
+            var runProperties = new RunProperties(
+                new RunFonts { Ascii = "Aptos", HighAnsi = "Aptos" },
+                new FontSize { Val = ((int)Math.Clamp(Math.Round(line.FontSize * 2), 18, isName ? 34 : 28)).ToString() });
+            if (line.Bold || isName) runProperties.Bold = new Bold();
+            if (isName) runProperties.Color = new Color { Val = "3367E8" };
+            paragraph.Append(new Run(runProperties, new Text(text) { Space = SpaceProcessingModeValues.Preserve }));
+            cell.Append(paragraph);
+            previousPage = line.Page;
+        }
+        if (!cell.Elements<Paragraph>().Any()) cell.Append(new Paragraph());
     }
 
     private static byte[] ApplyTheme(byte[] source, string templateId)

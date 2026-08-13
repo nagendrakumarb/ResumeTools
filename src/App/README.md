@@ -44,23 +44,13 @@ Learn:
 
 Do not add references from this project to the gRPC workers, ML.NET worker, or Python worker.
 
-## AdSense manual ad slot
+## Advertising policy safeguard
 
-The AdSense publisher ID is configured only on the content-rich
-`wwwroot/resume-guide.html` page. It is deliberately absent from the interactive
-ATS and job-match application because Google does not permit ads on screens that
-have little publisher content or primarily perform a utility action.
+No Google ad code is included in this project while the site is under AdSense
+review. This prevents ads from being served on the interactive resume analyzer,
+search results, loading screens, errors, policy pages, or other utility pages.
 
-The manual ad placement example is commented in `wwwroot/resume-guide.html`.
-
-After AdSense approves the site:
-
-1. Open **AdSense > Ads > By ad unit**.
-2. Create a **Display ad**.
-3. Copy its numeric `data-ad-slot` value.
-4. Find `REPLACE_WITH_REAL_NUMERIC_AD_SLOT_ID` in `wwwroot/resume-guide.html`.
-5. Replace it with the numeric value and remove the surrounding HTML comment.
-
-Do not publish a literal placeholder such as `YOUR_AD_SLOT_ID`. Keep manual ads
-away from upload, scan, download, job-selection, and application buttons. Do not
-add the AdSense script or a manual ad unit back to the Blazor tool shell.
+Before enabling ads in the future, complete a route-by-route policy review. Ads
+must remain disabled on every application and utility screen. Only consider a
+manual placement on a standalone, substantial editorial page after approval; do
+not use Auto Ads for this application.
