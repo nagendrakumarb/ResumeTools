@@ -2219,3 +2219,11 @@ footer {
             grid-column: 1/-1;
         }
 }
+/* Automatically collapse empty or unfilled AdSense slots */
+ins.adsbygoogle[data-ad-status="unfilled"],
+ins.adsbygoogle:empty {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
