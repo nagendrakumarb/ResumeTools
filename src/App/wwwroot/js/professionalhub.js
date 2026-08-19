@@ -1,55 +1,36 @@
 window.professionalHub = {
     // ---------------------------------------------------------------------------
-    // Google AdSense Handler (Patched to prevent TagError in Blazor / SPAs)
+    // Google AdSense Handler (Using your animation frame & visibility fix)
     // ---------------------------------------------------------------------------
     adsense: {
-        clientPublisherId: "ca-pub-8487728962349258",
-
-        /**
-         * Dynamically injects the Google AdSense library into the document head
-         * and initializes ads safely.
-         */
-        init: function (publisherId) {
-            if (publisherId) {
-                this.clientPublisherId = publisherId;
+        init: function () {
+            if (!document.getElementById("adsense-js")) {
+                const script = document.createElement("script");
+                script.id = "adsense-js";
+                script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8487728962349258";
+                script.async = true;
+                script.crossOrigin = "anonymous";
+                document.head.appendChild(script);
             }
-
-            if (document.getElementById("adsense-js")) {
-                this.push();
-                return;
-            }
-
-            const script = document.createElement("script");
-            script.id = "adsense-js";
-            script.async = true;
-            script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${this.clientPublisherId}`;
-            script.crossOrigin = "anonymous";
-
-            script.onload = () => {
-                this.push();
-            };
-
-            document.head.appendChild(script);
         },
-
-        /**
-         * Triggers AdSense to render pending <ins class="adsbygoogle"> tags.
-         * Checks for uninitialized slots to prevent "TagError: already have ads".
-         */
         push: function () {
-            try {
-                // Find <ins> tags that Google hasn't processed yet
-                const uninitializedAds = document.querySelectorAll(
-                    'ins.adsbygoogle:not([data-adsbygoogle-status="done"])'
-                );
+            // Delay execution slightly to allow Blazor layout rendering to complete
+            window.requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const uninitializedSlots = document.querySelectorAll('ins.adsbygoogle:not([data-adsbygoogle-status])');
 
-                // Only push if an unfulfilled ad slot exists in the DOM
-                if (uninitializedAds.length > 0) {
-                    (window.adsbygoogle = window.adsbygoogle || []).push({});
-                }
-            } catch (error) {
-                console.warn("AdSense push error or ad blocker detected:", error);
-            }
+                    uninitializedSlots.forEach((slot) => {
+                        // Only push if the container is currently visible in the DOM
+                        if (slot.offsetWidth > 0) {
+                            try {
+                                (window.adsbygoogle = window.adsbygoogle || []).push({});
+                            } catch (e) {
+                                console.warn("AdSense push execution skipped:", e);
+                            }
+                        }
+                    });
+                }, 100);
+            });
         }
     },
 
@@ -59,16 +40,14 @@ window.professionalHub = {
     files: {
         downloadBase64: function (fileName, contentType, base64) {
             try {
-                const sliceSize = 1024 * 512;
-                const byteSlices = [];
-                for (let offset = 0; offset < base64.length; offset += sliceSize) {
-                    const slice = base64.slice(offset, offset + sliceSize);
-                    const binary = atob(slice);
-                    const bytes = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                    byteSlices.push(bytes);
+                const cleanBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
+                const binary = atob(cleanBase64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
                 }
-                const blob = new Blob(byteSlices, { type: contentType });
+
+                const blob = new Blob([bytes], { type: contentType });
                 const url = URL.createObjectURL(blob);
                 const anchor = document.createElement("a");
                 anchor.href = url;
@@ -80,7 +59,7 @@ window.professionalHub = {
                 setTimeout(() => URL.revokeObjectURL(url), 30000);
                 return true;
             } catch (error) {
-                console.error("Resume download failed.", error);
+                console.error("File download failed.", error);
                 return false;
             }
         }
@@ -94,6 +73,11 @@ window.professionalHub = {
             return new Promise((resolve, reject) => {
                 const img = new Image();
                 img.onload = () => {
+                    if (!img.width || !img.height) {
+                        reject(new Error("Invalid image dimensions."));
+                        return;
+                    }
+
                     const width = 240;
                     const height = Math.max(1, Math.round((width * img.height) / img.width));
                     const canvas = document.createElement("canvas");
@@ -176,7 +160,8 @@ window.professionalHub = {
                 };
 
                 img.onerror = () => reject(new Error("The image template could not be decoded."));
-                img.src = `data:${contentType};base64,${base64}`;
+                const srcPrefix = contentType.startsWith("data:") ? "" : `data:${contentType};base64,`;
+                img.src = `${srcPrefix}${base64}`;
             });
         }
     },
@@ -290,8 +275,9 @@ window.professionalHub = {
 
         toBase64: function (bytes) {
             let binary = "";
-            for (let offset = 0; offset < bytes.length; offset += 0x8000) {
-                binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
             }
             return btoa(binary);
         },
@@ -363,11 +349,15 @@ window.professionalHub = {
             }
             const key = await this.getKey();
             const records = [];
-            for await (const [name, entry] of handle.entries()) {
-                if (entry.kind === "directory" && /^\d{4}-\d{2}-\d{2}$/.test(name)) {
-                    const content = await this.readDateFolder(entry, key);
-                    records.push(...content.records);
+            try {
+                for await (const [name, entry] of handle.entries()) {
+                    if (entry.kind === "directory" && /^\d{4}-\d{2}-\d{2}$/.test(name)) {
+                        const content = await this.readDateFolder(entry, key);
+                        records.push(...content.records);
+                    }
                 }
+            } catch (error) {
+                console.error("Failed reading ledger directories.", error);
             }
             return { handle, key, records };
         },
@@ -548,7 +538,10 @@ window.professionalHub = {
     }
 };
 
-// Automatically initialize AdSense on script load
-document.addEventListener("DOMContentLoaded", () => {
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+        window.professionalHub.adsense.init();
+    });
+} else {
     window.professionalHub.adsense.init();
-});
+}
