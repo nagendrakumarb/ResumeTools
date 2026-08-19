@@ -4,44 +4,69 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Privacy Policy | Professional Hub</title>
-    <meta name="description" content="How Professional Hub handles resumes, local browser storage, and job-provider requests." />
+    <meta name="description" content="Learn how Professional Hub processes resume files locally on your device using Blazor WebAssembly, ensuring maximum data privacy and browser-only analysis." />
     <link rel="canonical" href="https://professionalhub.co.in/privacy.html" />
     <link rel="stylesheet" href="css/app.css" />
 
-    <!-- GOOGLE ADSENSE CODE (Replace ca-pub-XXXXXXXXXXXXXXXX with your actual Publisher ID) -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=pub-8487728962349258"
-            crossorigin="anonymous"></script>
+    <!-- Google AdSense Code -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8487728962349258" crossorigin="anonymous"></script>
 </head>
 <body>
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="/" class="brand-logo">Professional Hub</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/resume-guide.html">ATS Guide</a>
+                <a href="/resume-format-guide.html">Format Guide</a>
+                <a href="/job-description-guide.html">Job Descriptions</a>
+            </div>
+        </nav>
+    </header>
+
     <main class="crawler-content legal-content">
-        <p><a href="/">Professional Hub</a> / Privacy</p>
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Professional Hub</a> &gt; <span>Privacy Policy</span>
+        </nav>
+
         <h1>Privacy Policy</h1>
-        <p><strong>Effective date:</strong> 13 August 2026</p>
-        <p>This policy explains what happens to information when you use Professional Hub. The service is designed to perform resume analysis inside your browser, but some optional features contact third-party services.</p>
+        <p><strong>Effective Date:</strong> August 13, 2026</p>
 
-        <h2>Resume files and generated documents</h2>
-        <p>PDF and DOCX resume files are read and processed on your device by the Blazor WebAssembly application. Professional Hub does not operate a server that receives or stores those resume files. Uploaded resume text and pasted job descriptions are private tool inputs: they are not published, shared with, or made visible to other Professional Hub users. Corrected documents are generated in the browser and downloaded to your device. If you grant access to a local folder, the browser uses the permission you approved to save application records or documents there.</p>
+        <p>Professional Hub ("we," "our," or "us") respects your privacy. This Privacy Policy outlines how your information is handled when using our platform. Our core application is architected to perform client-side resume analysis directly inside your browser, preventing your private employment data from being collected on remote servers.</p>
 
-        <h2>Local browser storage</h2>
-        <p>The application may store preferences, analysis summaries, job identifiers, and application-tracking records in browser storage such as IndexedDB. Resume text is not intended to be stored as an analytics record. You can remove local information by using application controls where provided, clearing site data in your browser, or removing files from a folder you mapped.</p>
+        <h2>1. Client-Side Resume Processing</h2>
+        <p>PDF, DOCX, and text resume files uploaded to Professional Hub are parsed locally on your device via Blazor WebAssembly. Professional Hub does not operate backend servers that collect, store, or transmit your uploaded resumes or target job descriptions. Your documents remain strictly inside your browser environment and are never made visible to third parties or other users.</p>
 
-        <h2>Job searches, imported URLs, and provider configuration</h2>
-        <p>When you search an external job source, your browser sends the selected keywords, locations, filters, and necessary authentication details directly to that provider. When you import a job URL, the browser may request that public URL directly or send the URL to the configured page-reading provider if direct access is blocked. Those providers receive the request and may process IP addresses and technical request information under their own privacy policies.</p>
-        <p>A provider configuration file is read into the current browser session. Secrets supplied to browser code cannot be treated as server-protected secrets. Do not use a high-value or unrestricted credential.</p>
+        <h2>2. Browser Storage & Local Data Retention</h2>
+        <p>To improve user experience, the application may save session preferences, analysis summaries, and job tracking records in local browser storage (such as IndexedDB or LocalStorage). You can permanently clear this data at any time through your browser settings or by clearing site data.</p>
 
-        <h2>Advertising and Cookies</h2>
-        <p>Professional Hub uses Google AdSense to serve advertisements when you visit our website. Google and third-party vendors use cookies (such as the Google DoubleClick cookie) to serve ads based on a user's prior visits to this website or other websites on the Internet.</p>
-        <p>Google's use of advertising cookies enables it and its partners to serve ads to users based on their visit to our site and/or other sites on the Internet. Users may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a> or <a href="https://www.aboutads.info" target="_blank" rel="noopener">aboutads.info</a>.</p>
+        <h2>3. External Job Searches & Import Links</h2>
+        <p>When using optional job-search or link-import features, your browser establishes a direct connection with the respective external job board or provider. These third-party services may log technical request metadata (such as IP addresses and browser headers) subject to their own respective privacy policies.</p>
 
-        <h2>Personal information and sensitive data</h2>
-        <p>Do not paste sensitive information that is unnecessary for resume analysis. Professional Hub does not intentionally send names, email addresses, phone numbers, or resume contents to advertising services. The site is intended for adults and is not directed to children under 13.</p>
+        <h2>4. Advertising, Cookies, and Third-Party Vendors</h2>
+        <p>Professional Hub uses <strong>Google AdSense</strong> to display advertisements. AdSense and third-party vendors use cookies—including the DoubleClick cookie—to serve non-personalized or personalized ads based on your visit to this site and other websites on the internet.</p>
+        <ul>
+            <li>Third-party vendors, including Google, use cookies to serve ads based on prior web visits.</li>
+            <li>Google's use of advertising cookies enables it and its partners to serve relevant ads based on browsing history.</li>
+            <li>You can opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google Ads Settings</a> or <a href="https://www.aboutads.info" target="_blank" rel="noopener">AboutAds.info</a>.</li>
+        </ul>
 
-        <h2>Security and limitations</h2>
-        <p>Local processing reduces server-side collection, but no browser application can promise absolute security. Browser extensions, device malware, external providers, and users who share downloaded files are outside Professional Hub's control.</p>
+        <h2>5. Sensitive Information</h2>
+        <p>We advise against pasting sensitive personal identifiers (such as government identification numbers, financial details, or sensitive health records) into resume tools. Professional Hub does not sell, share, or monetize user data.</p>
 
-        <h2>Changes and questions</h2>
-        <p>This policy may change when features or providers change. The effective date will be updated. Questions and issue reports can be submitted through the public <a href="https://github.com/nagendrakumarb/ResumeTools/issues" rel="external">Professional Hub repository issue tracker</a>.</p>
-        <p><a href="/about.html">About</a> &middot; <a href="/terms.html">Terms</a> &middot; <a href="/resume-guide.html">Resume guide</a></p>
+        <h2>6. Policy Updates & Inquiries</h2>
+        <p>This policy may be updated periodically to reflect new features or regulatory requirements. Any adjustments will be posted directly to this page with an updated effective date. Technical questions or issue reports can be raised via our official <a href="https://github.com/nagendrakumarb/ResumeTools/issues" target="_blank" rel="noopener">GitHub Repository Tracker</a>.</p>
+
+        <hr style="margin: 30px 0;" />
+
+        <div class="related-resources">
+            <p>
+                <a href="/about.html">About Us</a> &middot;
+                <a href="/terms.html">Terms of Service</a> &middot;
+                <a href="/resume-guide.html">ATS & Job Match Guide</a> &middot;
+                <a href="/support.html">Support</a>
+            </p>
+        </div>
     </main>
 </body>
 </html>

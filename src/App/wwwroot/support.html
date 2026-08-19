@@ -3,36 +3,81 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Support | Professional Hub</title>
-    <meta name="description" content="Support and feedback for the Professional Hub resume tools and guides." />
+    <title>Support & Help Center | Professional Hub</title>
+    <meta name="description" content="Get technical support, report issues, and submit feedback for Professional Hub's client-side resume tools and ATS optimization guides." />
     <link rel="canonical" href="https://professionalhub.co.in/support.html" />
     <link rel="stylesheet" href="css/app.css" />
 
     <!-- Google AdSense Code -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8487728962349258"
-            crossorigin="anonymous"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8487728962349258" crossorigin="anonymous"></script>
 </head>
 <body>
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="/" class="brand-logo">Professional Hub</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/resume-guide.html">ATS Guide</a>
+                <a href="/resume-format-guide.html">Format Guide</a>
+                <a href="/job-description-guide.html">Job Descriptions</a>
+            </div>
+        </nav>
+    </header>
+
     <main class="crawler-content legal-content">
-        <p><a href="/">Professional Hub</a> / Support</p>
-        <h1>Support and feedback</h1>
-        <p>Professional Hub is an independent browser-based project. Use this page to report a technical problem, suggest an improvement, or point out an error in one of the site guides.</p>
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="/">Professional Hub</a> &gt; <span>Support</span>
+        </nav>
 
-        <h2>Before reporting a problem</h2>
-        <p>Try the latest version of a modern browser, then repeat the action with a non-sensitive sample document if possible. Note the file type, the page or feature used, what you expected to happen, and what happened instead. Do not include your resume, contact details, job description, API key, or other sensitive information in a public report.</p>
+        <h1>Support & Technical Assistance</h1>
+        <p>Professional Hub is an independent, client-side web application designed to run resume parsing and ATS matching tools entirely within your browser. If you encounter technical issues, feature bugs, or have feedback regarding our guides, use the resources below.</p>
 
-        <h2>Contact route</h2>
-        <p>Submit a report or feedback through the <a href="https://github.com/nagendrakumarb/ResumeTools/issues" rel="external">Professional Hub GitHub issue tracker</a>. Describe the issue in your own words and include only information you are comfortable sharing publicly. For a correction to a guide, identify the page title and the specific statement that needs review.</p>
+        <!-- In-Article Ad Placement -->
+        <div class="ad-container" style="text-align: center; margin: 20px 0;">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-8487728962349258"
+                 data-ad-slot="auto"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>
+                (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+        </div>
 
-        <h2>Scope and limitations</h2>
-        <p>Support cannot provide legal, employment, recruiting, or immigration advice. The site can help explain its own checks, but it cannot confirm that a resume will be accepted by a particular employer or applicant tracking system.</p>
+        <h2>Frequently Asked Questions (Troubleshooting)</h2>
 
-        <p>
-            <a href="/about.html">About</a> &middot;
-            <a href="/privacy.html">Privacy Policy</a> &middot;
-            <a href="/terms.html">Terms</a> &middot;
-            <a href="/resume-guide.html">Resume guide</a>
-        </p>
+        <h3>1. Why is my PDF or DOCX file failing to parse?</h3>
+        <p>Because document processing occurs locally using WebAssembly, heavily encrypted, password-protected, or image-only scanned PDFs cannot be read. Ensure your document contains selectable text before uploading.</p>
+
+        <h3>2. How do I clear cached application data?</h3>
+        <p>If you experience unexpected behavior after an update, perform a hard refresh by pressing <code>Ctrl + Shift + R</code> (Windows) or <code>Cmd + Shift + R</code> (Mac), or clear your browser's site storage for <code>professionalhub.co.in</code>.</p>
+
+        <h2>Before Submitting a Bug Report</h2>
+        <p>To help us resolve issues efficiently, please follow these steps prior to submitting a ticket:</p>
+        <ul>
+            <li>Test the action in an updated modern web browser (Google Chrome, Microsoft Edge, Mozilla Firefox, or Safari).</li>
+            <li>Verify whether the issue persists with a non-sensitive sample document.</li>
+            <li>Note down your operating system, browser version, file format (.pdf or .docx), and exact error messages shown in the console (F12).</li>
+            <li><strong>Privacy Caution:</strong> Do not attach personal resumes, private contact details, or sensitive employment information to public bug reports.</li>
+        </ul>
+
+        <h2>Official Contact Channel</h2>
+        <p>All feature requests, bug reports, and content corrections are tracked publicly via our open-source project repository. Submit issues directly through the <a href="https://github.com/nagendrakumarb/ResumeTools/issues" target="_blank" rel="noopener">Professional Hub Issue Tracker on GitHub</a>.</p>
+
+        <h2>Scope of Support</h2>
+        <p>Support is limited to application functionality and guide accuracy. We cannot provide legal advice, individualized career coaching, immigration consulting, or guarantee interview callbacks from third-party employers.</p>
+
+        <hr style="margin: 30px 0;" />
+
+        <div class="related-resources">
+            <p>
+                <a href="/about.html">About Us</a> &middot;
+                <a href="/privacy.html">Privacy Policy</a> &middot;
+                <a href="/terms.html">Terms of Service</a> &middot;
+                <a href="/resume-guide.html">ATS & Job Match Guide</a>
+            </p>
+        </div>
     </main>
 </body>
 </html>
