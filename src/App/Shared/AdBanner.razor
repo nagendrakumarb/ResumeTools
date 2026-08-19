@@ -1,6 +1,6 @@
 ﻿@inject IJSRuntime JSRuntime
 
-<div class="my-3 text-center">
+<div class="my-3 text-center page-shell">
     <ins class="adsbygoogle"
          style="display:block"
          data-ad-client="@PublisherId"
@@ -11,7 +11,7 @@
 
 @code {
     [Parameter] public string PublisherId { get; set; } = "ca-pub-8487728962349258";
-    [Parameter] public string AdSlot { get; set; } = "1234567890"; // Pass custom slot ID if needed
+    [Parameter] public string AdSlot { get; set; } = "8171493818"; // Live Top Banner Ad Slot
     [Parameter] public string AdFormat { get; set; } = "auto";
     [Parameter] public bool FullWidthResponsive { get; set; } = true;
 
@@ -19,12 +19,16 @@
     {
         if (firstRender)
         {
-            // Brief yield gives Blazor time to commit the <ins> tag to the browser DOM
+            // Gives Blazor time to commit the <ins> tag to the browser DOM before JS execution
             await Task.Yield();
 
             try
             {
                 await JSRuntime.InvokeVoidAsync("professionalHub.adsense.push");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Safely handles circuit drops during SPA navigation
             }
             catch (Exception ex)
             {

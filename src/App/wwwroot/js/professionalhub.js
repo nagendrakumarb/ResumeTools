@@ -1,13 +1,13 @@
 window.professionalHub = {
     // ---------------------------------------------------------------------------
-    // Google AdSense Handler
+    // Google AdSense Handler (Patched to prevent TagError in Blazor / SPAs)
     // ---------------------------------------------------------------------------
     adsense: {
         clientPublisherId: "ca-pub-8487728962349258",
 
         /**
          * Dynamically injects the Google AdSense library into the document head
-         * and initializes ads.
+         * and initializes ads safely.
          */
         init: function (publisherId) {
             if (publisherId) {
@@ -33,19 +33,20 @@ window.professionalHub = {
         },
 
         /**
-         * Triggers AdSense to render active <ins class="adsbygoogle"> tags.
-         * Only targets elements that have NOT been initialized yet to prevent 400 errors.
+         * Triggers AdSense to render pending <ins class="adsbygoogle"> tags.
+         * Checks for uninitialized slots to prevent "TagError: already have ads".
          */
         push: function () {
             try {
-                // Select only <ins> tags that Google hasn't parsed or filled yet
-                const unfilledAds = document.querySelectorAll(
-                    'ins.adsbygoogle:not([data-adsbygoogle-status]):not([data-ad-status])'
+                // Find <ins> tags that Google hasn't processed yet
+                const uninitializedAds = document.querySelectorAll(
+                    'ins.adsbygoogle:not([data-adsbygoogle-status="done"])'
                 );
 
-                unfilledAds.forEach(() => {
+                // Only push if an unfulfilled ad slot exists in the DOM
+                if (uninitializedAds.length > 0) {
                     (window.adsbygoogle = window.adsbygoogle || []).push({});
-                });
+                }
             } catch (error) {
                 console.warn("AdSense push error or ad blocker detected:", error);
             }
