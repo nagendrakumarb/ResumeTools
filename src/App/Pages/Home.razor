@@ -9,6 +9,7 @@
 @inject AnalysisHistoryService History
 @inject ResumeImprovementService Improver
 @inject IJSRuntime JS
+@inject ResumeCorrectionService CorrectionService
 
 <PageTitle>ATS Resume Checker & Job Match | Professional Hub</PageTitle>
 
@@ -1047,26 +1048,50 @@
         try
         {
             EnableSafeForceCorrections();
+          //  System.Diagnostics.Debugger.Break();
+
+            // Safely process terms and grammar-check their respective evidence paragraphs
+            List<string> processedTermsList = new();
+            Dictionary<string, string> processedEvidenceMap = new(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var term in selectedMatchTerms)
+            {
+                var processedTermCollection = await CorrectionService.ProcessTermsAsync(new List<string> { term }, fixOptions);
+                string finalTerm = processedTermCollection.FirstOrDefault() ?? term;
+                processedTermsList.Add(finalTerm);
+
+                if (matchTermEvidence.TryGetValue(term, out var rawEvidence) && confirmedMatchTermEvidence.Contains(term))
+                {
+                    // Grammar check only the targeted paragraph where this term/evidence is applied
+                    string correctedEvidence = await CorrectionService.CorrectParagraphGrammarAsync(rawEvidence);
+                    processedEvidenceMap[finalTerm] = correctedEvidence;
+                }
+            }
+
             var result = Improver.TailorForJobWithReport(resume, jobDescription, new JobTailoringOptions
             {
                 AtsFixes = fixOptions,
-                SelectedTerms = selectedMatchTerms.ToArray(),
-                EvidenceStatements = matchTermEvidence
-                    .Where(pair => confirmedMatchTermEvidence.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value))
-                    .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase)
+                SelectedTerms = processedTermsList.ToArray(),
+                EvidenceStatements = processedEvidenceMap
             });
+
             var verifiedTailoredResume = await CaptureCorrectionVerificationAsync(resume, result, "Job-tailored resume.docx");
             matchFixReport = result.Outcomes;
             var outputName = $"Job-Tailored-{Path.GetFileNameWithoutExtension(resume.OriginalFileName)}.docx";
             lastTailoredResumeBytes = result.Bytes;
             lastTailoredResumeFileName = outputName;
             matchResult = Similarity.Compare(verifiedTailoredResume.Text, jobDescription);
+
             var downloaded = await JS.InvokeAsync<bool>("professionalHub.files.downloadBase64", outputName,
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Convert.ToBase64String(result.Bytes));
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Convert.ToBase64String(result.Bytes));
             if (!downloaded) throw new InvalidOperationException("The browser could not create the download.");
             matchDownloadStatus = $"Tailored resume downloaded ({result.Bytes.Length / 1024d:N0} KB). Recalculated requirement coverage: {matchResult.Score:0}%. Review every added term for accuracy before applying.";
         }
-        catch (Exception ex) { error = $"Could not tailor this resume: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            error = $"Could not tailor this resume: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"[TailorForJobAsync Exception]: {ex}");
+        }
         finally { isBusy = false; }
     }
 

@@ -4,6 +4,7 @@ using ProfessionalHub.ResumeTools;
 using ProfessionalHub.ResumeTools.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
@@ -16,5 +17,8 @@ builder.Services.AddScoped<JobSearchService>();
 builder.Services.AddScoped<JobApplicationStore>();
 builder.Services.AddScoped<ResumeImprovementService>();
 builder.Services.AddScoped<AnalysisHistoryService>();
+
+// Register your grammar and spell correction service here
+builder.Services.AddScoped<ResumeCorrectionService>();
 
 await builder.Build().RunAsync();

@@ -37,3 +37,6 @@
 /src/ProfessionalHub.MLNet.Worker/bin/Release/net9.0
 /src/ProfessionalHub.MLNet.Worker/obj
 /src/ProfessionalHub.AI.Orchestrator/bin/Debug/net9.0
+/src/ProfessionalHub.DotNetAI.Worker/bin/Debug/net9.0
+/src/ProfessionalHub.AI.Contracts/bin/Debug/net9.0
+/src/ProfessionalHub.MLNet.Worker/bin/Debug/net9.0
