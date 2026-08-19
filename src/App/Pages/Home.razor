@@ -10,7 +10,7 @@
 @inject ResumeImprovementService Improver
 @inject IJSRuntime JS
 @inject ResumeCorrectionService CorrectionService
-
+@inject IConfiguration Configuration
 <PageTitle>ATS Resume Checker & Job Match | Professional Hub</PageTitle>
 
 @if (isBusy)
@@ -251,42 +251,47 @@
             }
             <div class="group-chart skills-chart"><div class="mini-donut skill-donut" style="--hard:@(hardShare * 3.6)deg"><span>@totalSkills</span></div><strong>Skill mix</strong><small>@atsResult.Skills.HardSkills.Count hard / @atsResult.Skills.SoftSkills.Count soft</small></div>
         </div>
-        <ResumeCorrectionOptions Options="fixOptions"
-                                 Title="Corrections applied to every download"
-                                 Description="These selections are used for the fixed original, built-in templates, and uploaded templates."
-                                 ShowRecommendationButton="true"
-                                 EnableRecommended="EnableSafeForceCorrections">
-            <button type="button" class="generate-button" @onclick="ApplySelectedCorrectionsAndRecheckAsync"
+            @if (showCorrectionPanel)
+            {
+                <ResumeCorrectionOptions Options="fixOptions"
+                Title="Corrections applied to every download"
+                Description="These selections are used for the fixed original, built-in templates, and uploaded templates."
+                ShowRecommendationButton="true"
+                EnableRecommended="EnableSafeForceCorrections">
+                    <button type="button" class="generate-button" @onclick="ApplySelectedCorrectionsAndRecheckAsync"
                     disabled="@(resume is null || isBusy)">
-                Apply selected corrections &amp; recheck ATS
-            </button>
-        </ResumeCorrectionOptions>
-        <div class="resume-actions">
-            <div class="output-option fix-output">
-                <h3>@(resume?.FileType == "PDF" ? "Rebuild corrected DOCX" : "Fix original formatting")</h3>
-                <p>@(resume?.FileType == "PDF" ? "Convert the PDF into a corrected, editable ATS-safe Word document." : "Preserve the uploaded Word layout and apply safe text corrections.")</p>
-                @if (resume?.FileType == "PDF")
-                {
-                    <p class="format-warning"><strong>Layout warning:</strong> a PDF has fixed drawing instructions, not editable Word formatting. Upload the original DOCX as the resume if the corrected download must retain the exact layout.</p>
-                }
-                <ResumeCorrectionOptions Options="fixOptions" />
-                <button class="generate-button" @onclick="FixOriginalAsync" disabled="@(resume is null || isBusy)">@(resume?.FileType == "PDF" ? "Download corrected DOCX" : "Download fixed original")</button>
-                @if (resume?.FileType == "PDF")
-                {
-                    <small>This action rebuilds the content; it does not preserve the PDF's exact formatting.</small>
-                }
-            </div>
-            <div class="output-option">
-                <h3>Apply a template</h3><p>Keep the same facts and rebuild them in a deterministic ATS-safe design.</p><select @bind="selectedTemplate" aria-label="Resume template">
-                @foreach (var template in ResumeImprovementService.Templates)
-                {
-                    <option value="@template.Id">@template.Name — @template.Description</option>
-                }
-            </select><button class="generate-button" @onclick="GenerateTemplateAsync" disabled="@isBusy">Generate styled DOCX</button>
-        </div>
-        <div class="output-option"><h3>Use uploaded template</h3><p>Upload a DOCX, PDF, or resume-layout image. Images are analyzed locally for palette and column structure.</p><InputFile OnChange="ReadTemplateAsync" accept=".docx,.pdf,.png,.jpg,.jpeg,.webp" class="template-file" /><small>@uploadedTemplateStatus</small><button class="generate-button" @onclick="GenerateUploadedTemplateAsync" disabled="@(uploadedTemplate is null || isBusy)">Convert with uploaded template</button></div>
-    </div>
-    @if (!string.IsNullOrWhiteSpace(downloadStatus))
+                        Apply selected corrections &amp; recheck ATS
+                    </button>
+                </ResumeCorrectionOptions>
+
+
+                <div class="resume-actions">
+                    <div class="output-option fix-output">
+                        <h3>@(resume?.FileType == "PDF" ? "Rebuild corrected DOCX" : "Fix original formatting")</h3>
+                        <p>@(resume?.FileType == "PDF" ? "Convert the PDF into a corrected, editable ATS-safe Word document." : "Preserve the uploaded Word layout and apply safe text corrections.")</p>
+                        @if (resume?.FileType == "PDF")
+                        {
+                            <p class="format-warning"><strong>Layout warning:</strong> a PDF has fixed drawing instructions, not editable Word formatting. Upload the original DOCX as the resume if the corrected download must retain the exact layout.</p>
+                        }
+                        <ResumeCorrectionOptions Options="fixOptions" />
+                        <button class="generate-button" @onclick="FixOriginalAsync" disabled="@(resume is null || isBusy)">@(resume?.FileType == "PDF" ? "Download corrected DOCX" : "Download fixed original")</button>
+                        @if (resume?.FileType == "PDF")
+                        {
+                            <small>This action rebuilds the content; it does not preserve the PDF's exact formatting.</small>
+                        }
+                    </div>
+                    <div class="output-option">
+                        <h3>Apply a template</h3><p>Keep the same facts and rebuild them in a deterministic ATS-safe design.</p><select @bind="selectedTemplate" aria-label="Resume template">
+                            @foreach (var template in ResumeImprovementService.Templates)
+                            {
+                                <option value="@template.Id">@template.Name — @template.Description</option>
+                            }
+                        </select><button class="generate-button" @onclick="GenerateTemplateAsync" disabled="@isBusy">Generate styled DOCX</button>
+                    </div>
+                    <div class="output-option"><h3>Use uploaded template</h3><p>Upload a DOCX, PDF, or resume-layout image. Images are analyzed locally for palette and column structure.</p><InputFile OnChange="ReadTemplateAsync" accept=".docx,.pdf,.png,.jpg,.jpeg,.webp" class="template-file" /><small>@uploadedTemplateStatus</small><button class="generate-button" @onclick="GenerateUploadedTemplateAsync" disabled="@(uploadedTemplate is null || isBusy)">Convert with uploaded template</button></div>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(downloadStatus))
     {
         <p class="generator-note" role="status">@downloadStatus</p>
     }
@@ -334,56 +339,60 @@
         <a class="apply-job-link" href="@jobUrl" target="_blank" rel="noopener noreferrer">Open application page <span aria-hidden="true">↗</span></a>
     }
     <div class="term-columns"><div><h3 class="term-heading term-heading--strong">Strong matches</h3><TermList Terms="matchResult.MatchedTerms" EmptyText="No strong terms yet" Variant="strong" /></div><div><h3 class="term-heading term-heading--missing">Missing terms</h3><TermList Terms="FilteredMissingTerms" EmptyText="No notable gaps" Variant="missing" /></div></div>
-    <div class="match-generator">
-        <h3>Apply job-match improvements</h3>
-        <p>Selected terms are placed contextually: technologies stay in Skills, professional strengths go in the Summary, and architecture or operational requirements are attached to relevant experience evidence. Select only terms that truthfully describe your work.</p>
-        <ResumeCorrectionOptions Options="fixOptions"
-                                 Title="ATS objectives to apply with job tailoring"
-                                 Description="The same correction engine used by ATS Compatibility is applied to this download."
-                                 ShowRecommendationButton="true"
-                                 EnableRecommended="EnableSafeForceCorrections" />
-        <div class="match-term-options">
-            @foreach (var term in FilteredMissingTerms)
+
+    @if (showJobMatchImprovementsPanel)
+    {
+        <div class="match-generator">
+            <h3>Apply job-match improvements</h3>
+            <p>Selected terms are placed contextually: technologies stay in Skills, professional strengths go in the Summary, and architecture or operational requirements are attached to relevant experience evidence. Select only terms that truthfully describe your work.</p>
+            <ResumeCorrectionOptions Options="fixOptions"
+                                     Title="ATS objectives to apply with job tailoring"
+                                     Description="The same correction engine used by ATS Compatibility is applied to this download."
+                                     ShowRecommendationButton="true"
+                                     EnableRecommended="EnableSafeForceCorrections" />
+            <div class="match-term-options">
+                @foreach (var term in FilteredMissingTerms)
+                {
+                    <label><input type="checkbox" checked="@selectedMatchTerms.Contains(term)" @onchange="args => ToggleMatchTerm(term, args)" />@term</label>
+                }
+            </div>
+            @if (selectedMatchTerms.Count > 0)
             {
-                <label><input type="checkbox" checked="@selectedMatchTerms.Contains(term)" @onchange="args => ToggleMatchTerm(term, args)" />@term</label>
+                <div class="term-evidence-inputs">
+                    <h4>Add truthful evidence for missing terms</h4>
+                    <p>Each field starts with a polished, term-specific draft. Use it as-is only when it is true, or edit it to reflect your actual work. Your confirmed statement is added to the most relevant experience paragraph.</p>
+                    @foreach (var term in selectedMatchTerms.OrderBy(term => term))
+                    {
+                        <label for="@EvidenceInputId(term)"><strong>@term</strong><textarea id="@EvidenceInputId(term)" rows="2" value="@EvidenceFor(term)" @oninput="args => SetEvidence(term, args.Value?.ToString())"></textarea></label>
+                        <label class="evidence-confirmation"><input type="checkbox" checked="@confirmedMatchTermEvidence.Contains(term)" @onchange="args => ConfirmEvidence(term, args)" /> I confirm this statement accurately describes my experience.</label>
+                    }
+                </div>
             }
+            <button class="generate-button" @onclick="TailorForJobAsync" disabled="@(resume is null || isBusy || !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))">Apply selected improvements &amp; download DOCX</button>
+            @if (resume is not null && !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))
+            {
+                <p class="metric-improvement"><strong>Original formatting protection:</strong> Upload the original DOCX to enable tailoring. PDF analysis remains available, but PDF-to-Word reconstruction cannot retain the source's editable styles and layout.</p>
+            }
+            <small>A universal 100% ATS guarantee is not technically possible. The audit identifies every applied and withheld instruction.</small>
+            @if (!string.IsNullOrWhiteSpace(matchDownloadStatus))
+            {
+                <p class="generator-note">@matchDownloadStatus</p>
+            }
+            @if (matchFixReport.Count > 0)
+            {
+                <div class="fix-report">
+                    <h3>Job-tailoring audit</h3>
+                    @foreach (var item in matchFixReport)
+                    {
+                        <div class="fix-report-item @FixStatusClass(item.Status)">
+                            <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
+                        </div>
+                    }
+                </div>
+            }
+            <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
         </div>
-        @if (selectedMatchTerms.Count > 0)
-        {
-            <div class="term-evidence-inputs">
-                <h4>Add truthful evidence for missing terms</h4>
-                <p>Each field starts with a polished, term-specific draft. Use it as-is only when it is true, or edit it to reflect your actual work. Your confirmed statement is added to the most relevant experience paragraph.</p>
-                @foreach (var term in selectedMatchTerms.OrderBy(term => term))
-                {
-                    <label for="@EvidenceInputId(term)"><strong>@term</strong><textarea id="@EvidenceInputId(term)" rows="2" value="@EvidenceFor(term)" @oninput="args => SetEvidence(term, args.Value?.ToString())"></textarea></label>
-                    <label class="evidence-confirmation"><input type="checkbox" checked="@confirmedMatchTermEvidence.Contains(term)" @onchange="args => ConfirmEvidence(term, args)" /> I confirm this statement accurately describes my experience.</label>
-                }
-            </div>
-        }
-        <button class="generate-button" @onclick="TailorForJobAsync" disabled="@(resume is null || isBusy || !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))">Apply selected improvements &amp; download DOCX</button>
-        @if (resume is not null && !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))
-        {
-            <p class="metric-improvement"><strong>Original formatting protection:</strong> Upload the original DOCX to enable tailoring. PDF analysis remains available, but PDF-to-Word reconstruction cannot retain the source's editable styles and layout.</p>
-        }
-        <small>A universal 100% ATS guarantee is not technically possible. The audit identifies every applied and withheld instruction.</small>
-        @if (!string.IsNullOrWhiteSpace(matchDownloadStatus))
-        {
-            <p class="generator-note">@matchDownloadStatus</p>
-        }
-        @if (matchFixReport.Count > 0)
-        {
-            <div class="fix-report">
-                <h3>Job-tailoring audit</h3>
-                @foreach (var item in matchFixReport)
-                {
-                    <div class="fix-report-item @FixStatusClass(item.Status)">
-                        <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
-                    </div>
-                }
-            </div>
-        }
-        <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
-    </div>
+    }
 }
 </section>
 </main>
@@ -477,6 +486,8 @@
     {
         JobCatalogInfo? info = null;
         JobSearchOptions options = new();
+        showCorrectionPanel = Configuration.GetValue<bool>("ResumeSettings:ShowCorrectionOptionsPanel", true);
+        showJobMatchImprovementsPanel = Configuration.GetValue<bool>("ResumeSettings:ShowJobMatchImprovementsPanel", true);
         try
         {
             options = await JobSearch.GetSearchOptionsAsync();
@@ -1031,6 +1042,8 @@
             _ => "Implemented structured frameworks utilizing " + term + ", enhancing system capability and long-term maintainability."
         };
     }
+    private bool showCorrectionPanel = true; // ADD THIS FIELD
+    private bool showJobMatchImprovementsPanel = true;
 
     private static string LowercaseFirst(string text)
     {
