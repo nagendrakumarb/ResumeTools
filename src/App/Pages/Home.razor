@@ -41,7 +41,10 @@
         {
             <div class="feature-copy"><h2>ATS compatibility scan</h2><p>Checks contact details, standard sections, measurable achievements, resume length, and text readability. No job description is required.</p></div>
             <button class="score-button" @onclick="AnalyzeAtsAsync" disabled="@(!HasResume || isBusy)">Check ATS compatibility</button>
-            @if (!HasResume && string.IsNullOrWhiteSpace(error)) { <p class="action-hint">Choose a PDF or DOCX resume to begin.</p> }
+            @if (!HasResume && string.IsNullOrWhiteSpace(error))
+            {
+                <p class="action-hint">Choose a PDF or DOCX resume to begin.</p>
+            }
         }
         else
         {
@@ -55,7 +58,12 @@
                             <input @bind="customKeyword" @bind:event="oninput" list="keyword-options" placeholder="Type or select a job title" />
                             <button type="button" @onclick="AddCustomKeyword" disabled="@string.IsNullOrWhiteSpace(customKeyword)">Add</button>
                         </div>
-                        <datalist id="keyword-options">@foreach (var keyword in catalogKeywords) { <option value="@keyword"></option> }</datalist>
+                        <datalist id="keyword-options">
+                            @foreach (var keyword in catalogKeywords)
+                            {
+                                <option value="@keyword"></option>
+                            }
+                        </datalist>
                         <details class="filter-checklist">
                             <summary>@SelectionSummary(selectedKeywords, "All configured job titles")</summary>
                             <div class="role-groups">
@@ -82,7 +90,12 @@
                             <input @bind="customLocation" @bind:event="oninput" list="location-options" placeholder="Type or select a location" />
                             <button type="button" @onclick="AddCustomLocation" disabled="@string.IsNullOrWhiteSpace(customLocation)">Add</button>
                         </div>
-                        <datalist id="location-options">@foreach (var location in catalogLocations) { <option value="@location"></option> }</datalist>
+                        <datalist id="location-options">
+                            @foreach (var location in catalogLocations)
+                            {
+                                <option value="@location"></option>
+                            }
+                        </datalist>
                         <details class="filter-checklist">
                             <summary>@SelectionSummary(selectedLocations, "All configured locations")</summary>
                             <div>
@@ -141,20 +154,24 @@
                 <div class="job-ledger">
                     <div>
                         <strong>Applied-job folder</strong>
-                        <small>@jobFolderMessage @if (lastTailoredResumeBytes is not null) { <span>Latest tailored CV is ready to attach.</span> }</small>
-                    </div>
-                    <button type="button" @onclick="MapJobFolderAsync" disabled="@(!jobFolderSupported || isBusy)">Map local folder</button>
-                    <button type="button" title="Application was submitted to the employer" @onclick='() => SaveSelectedJobsAsync("Applied")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Mark applied</button>
-                    <button type="button" title="Application lifecycle is closed, withdrawn, rejected, or otherwise finished" @onclick='() => SaveSelectedJobsAsync("Completed")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Close application</button>
+                        <small>
+                            @jobFolderMessage @if (lastTailoredResumeBytes is not null) {
+                            <span>Latest tailored CV is ready to attach.</span>
+                        }
+                    </small>
                 </div>
-                @if (jobResults.Count > 0)
-                {
-                    <div class="result-filter-bar">
-                        <strong>@FilteredJobs.Count() of @jobResults.Count jobs</strong>
-                        <input @bind="resultTextFilter" @bind:event="oninput" placeholder="Filter fetched results" />
-                        <button type="button" @onclick="ClearResultFilters">Clear</button>
-                    </div>
-                    <div class="faceted-results">
+                <button type="button" @onclick="MapJobFolderAsync" disabled="@(!jobFolderSupported || isBusy)">Map local folder</button>
+                <button type="button" title="Application was submitted to the employer" @onclick='() => SaveSelectedJobsAsync("Applied")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Mark applied</button>
+                <button type="button" title="Application lifecycle is closed, withdrawn, rejected, or otherwise finished" @onclick='() => SaveSelectedJobsAsync("Completed")' disabled="@(selectedJobFingerprints.Count == 0 || !jobFolderReady || isBusy)">Close application</button>
+            </div>
+            @if (jobResults.Count > 0)
+            {
+                <div class="result-filter-bar">
+                    <strong>@FilteredJobs.Count() of @jobResults.Count jobs</strong>
+                    <input @bind="resultTextFilter" @bind:event="oninput" placeholder="Filter fetched results" />
+                    <button type="button" @onclick="ClearResultFilters">Clear</button>
+                </div>
+                <div class="faceted-results">
                     <aside class="facet-panel">
                         <h3>Filter fetched jobs <small>Local · no API credits</small></h3>
                         <FacetGroup Title="Work mode" Options="@FacetOptions(WorkMode)" Selected="@workModeFilters" Changed="@ToggleWorkMode" />
@@ -183,157 +200,191 @@
                                 </button>
                             </div>
                         }
-                        @if (!FilteredJobs.Any()) { <p class="empty-filter-result">No fetched jobs match these filters.</p> }
+                        @if (!FilteredJobs.Any())
+                        {
+                            <p class="empty-filter-result">No fetched jobs match these filters.</p>
+                        }
                     </div>
-                    </div>
-                }
-            </details>
-            <label class="field-label" for="jobUrl">2. Import the job posting</label>
-            <div class="url-row"><input id="jobUrl" type="url" @bind="jobUrl" @bind:event="oninput" placeholder="https://company.com/jobs/role" /><button @onclick="ImportJobAsync" disabled="@(string.IsNullOrWhiteSpace(jobUrl) || isBusy)">Import URL</button></div>
-            <div class="or-divider"><span>or paste the description</span></div>
-            <textarea id="jobDescription" @bind="jobDescription" @bind:event="oninput" rows="8" placeholder="Paste the job description here..."></textarea>
-            <button class="score-button" @onclick="AnalyzeMatchAsync" disabled="@(!CanMatch || isBusy)">@(isBusy ? "Analyzing…" : "Calculate job match")</button>
-            @if (!CanMatch && string.IsNullOrWhiteSpace(error)) { <p class="action-hint">@MatchHint</p> }
+                </div>
+            }
+        </details>
+        <label class="field-label" for="jobUrl">2. Import the job posting</label>
+        <div class="url-row"><input id="jobUrl" type="url" @bind="jobUrl" @bind:event="oninput" placeholder="https://company.com/jobs/role" /><button @onclick="ImportJobAsync" disabled="@(string.IsNullOrWhiteSpace(jobUrl) || isBusy)">Import URL</button></div>
+        <div class="or-divider"><span>or paste the description</span></div>
+        <textarea id="jobDescription" @bind="jobDescription" @bind:event="oninput" rows="8" placeholder="Paste the job description here..."></textarea>
+        <button class="score-button" @onclick="AnalyzeMatchAsync" disabled="@(!CanMatch || isBusy)">@(isBusy ? "Analyzing…" : "Calculate job match")</button>
+        @if (!CanMatch && string.IsNullOrWhiteSpace(error))
+        {
+            <p class="action-hint">@MatchHint</p>
         }
-        @if (!string.IsNullOrWhiteSpace(error)) { <p class="alert alert-danger" role="alert">@error</p> }
-    </section>
+    }
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <p class="alert alert-danger" role="alert">@error</p>
+    }
+</section>
 
-    <section class="panel result-panel" aria-live="polite">
-        @if (atsResult is null && matchResult is null)
-        {
-            <div class="empty-result"><div class="score-ring muted">—</div><h2>@(mode == ToolMode.Ats ? "Your ATS score will appear here" : "Your job-match score will appear here")</h2><p>@(mode == ToolMode.Ats ? "Run the resume scan without supplying a job description." : "Import a posting URL or paste its description to compare relevant terms.")</p></div>
-        }
-        else if (atsResult is not null)
-        {
-            <div class="overall-result @GradeClass(atsResult.Score)"><div class="score-ring">@atsResult.Score.ToString("0")<small>%</small></div><div class="grade-badge">Grade @atsResult.Grade</div></div><h2>@ScoreHeading(atsResult.Score)</h2><p>@atsResult.Summary</p>
-            <div class="quality-meter" aria-label="Resume quality: @QualityBand(atsResult.Score)">
-                <i style="left:calc(@(atsResult.Score)% - 8px)"></i><div class="quality-track"></div>
-                <div class="quality-labels"><span>Low</span><span>Medium</span><span>High</span><span>Excellent</span></div>
-            </div>
-            <div class="group-charts">
-                @foreach (var group in atsResult.Checks.GroupBy(x => x.Group))
-                {
-                    var groupScore = Math.Round(group.Sum(x => x.Score * x.Weight) / group.Sum(x => x.Weight));
-                    <div class="group-chart @GradeClass(groupScore)">
-                        <div class="mini-donut" style="--score:@(groupScore * 3.6)deg"><span>@groupScore%</span></div>
-                        <strong>@group.Key</strong><small>@GroupSummary(groupScore)</small>
-                    </div>
-                }
-                @{ var totalSkills = atsResult.Skills.HardSkills.Count + atsResult.Skills.SoftSkills.Count; var hardShare = totalSkills == 0 ? 0 : Math.Round(atsResult.Skills.HardSkills.Count * 100d / totalSkills); }
-                <div class="group-chart skills-chart"><div class="mini-donut skill-donut" style="--hard:@(hardShare * 3.6)deg"><span>@totalSkills</span></div><strong>Skill mix</strong><small>@atsResult.Skills.HardSkills.Count hard / @atsResult.Skills.SoftSkills.Count soft</small></div>
-            </div>
-            <ResumeCorrectionOptions Options="fixOptions"
-                                     Title="Corrections applied to every download"
-                                     Description="These selections are used for the fixed original, built-in templates, and uploaded templates."
-                                     ShowRecommendationButton="true"
-                                     EnableRecommended="EnableSafeForceCorrections">
-                <button type="button" class="generate-button" @onclick="ApplySelectedCorrectionsAndRecheckAsync"
-                        disabled="@(resume is null || isBusy)">
-                    Apply selected corrections &amp; recheck ATS
-                </button>
-            </ResumeCorrectionOptions>
-            <div class="resume-actions">
-                <div class="output-option fix-output">
-                    <h3>@(resume?.FileType == "PDF" ? "Rebuild corrected DOCX" : "Fix original formatting")</h3>
-                    <p>@(resume?.FileType == "PDF" ? "Convert the PDF into a corrected, editable ATS-safe Word document." : "Preserve the uploaded Word layout and apply safe text corrections.")</p>
-                    @if (resume?.FileType == "PDF")
-                    {
-                        <p class="format-warning"><strong>Layout warning:</strong> a PDF has fixed drawing instructions, not editable Word formatting. Upload the original DOCX as the resume if the corrected download must retain the exact layout.</p>
-                    }
-                    <ResumeCorrectionOptions Options="fixOptions" />
-                    <button class="generate-button" @onclick="FixOriginalAsync" disabled="@(resume is null || isBusy)">@(resume?.FileType == "PDF" ? "Download corrected DOCX" : "Download fixed original")</button>
-                    @if (resume?.FileType == "PDF") { <small>This action rebuilds the content; it does not preserve the PDF's exact formatting.</small> }
-                </div>
-                <div class="output-option"><h3>Apply a template</h3><p>Keep the same facts and rebuild them in a deterministic ATS-safe design.</p><select @bind="selectedTemplate" aria-label="Resume template">@foreach (var template in ResumeImprovementService.Templates) { <option value="@template.Id">@template.Name — @template.Description</option> }</select><button class="generate-button" @onclick="GenerateTemplateAsync" disabled="@isBusy">Generate styled DOCX</button></div>
-                <div class="output-option"><h3>Use uploaded template</h3><p>Upload a DOCX, PDF, or resume-layout image. Images are analyzed locally for palette and column structure.</p><InputFile OnChange="ReadTemplateAsync" accept=".docx,.pdf,.png,.jpg,.jpeg,.webp" class="template-file" /><small>@uploadedTemplateStatus</small><button class="generate-button" @onclick="GenerateUploadedTemplateAsync" disabled="@(uploadedTemplate is null || isBusy)">Convert with uploaded template</button></div>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(downloadStatus)) { <p class="generator-note" role="status">@downloadStatus</p> }
-            @if (fixReport.Count > 0)
+<section class="panel result-panel" aria-live="polite">
+    @if (atsResult is null && matchResult is null)
+    {
+        <div class="empty-result"><div class="score-ring muted">—</div><h2>@(mode == ToolMode.Ats ? "Your ATS score will appear here" : "Your job-match score will appear here")</h2><p>@(mode == ToolMode.Ats ? "Run the resume scan without supplying a job description." : "Import a posting URL or paste its description to compare relevant terms.")</p></div>
+    }
+    else if (atsResult is not null)
+    {
+        <div class="overall-result @GradeClass(atsResult.Score)"><div class="score-ring">@atsResult.Score.ToString("0")<small>%</small></div><div class="grade-badge">Grade @atsResult.Grade</div></div><h2>@ScoreHeading(atsResult.Score)</h2><p>@atsResult.Summary</p>
+        <div class="quality-meter" aria-label="Resume quality: @QualityBand(atsResult.Score)">
+            <i style="left:calc(@(atsResult.Score)% - 8px)"></i><div class="quality-track"></div>
+            <div class="quality-labels"><span>Low</span><span>Medium</span><span>High</span><span>Excellent</span></div>
+        </div>
+        <div class="group-charts">
+            @foreach (var group in atsResult.Checks.GroupBy(x => x.Group))
             {
-                <div class="fix-report" aria-live="polite">
-                    <h3>Correction audit</h3>
-                    @foreach (var item in fixReport)
-                    {
-                        <div class="fix-report-item @FixStatusClass(item.Status)">
-                            <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
-                        </div>
-                    }
+                var groupScore = Math.Round(group.Sum(x => x.Score * x.Weight) / group.Sum(x => x.Weight));
+                <div class="group-chart @GradeClass(groupScore)">
+                    <div class="mini-donut" style="--score:@(groupScore * 3.6)deg"><span>@groupScore%</span></div>
+                    <strong>@group.Key</strong><small>@GroupSummary(groupScore)</small>
                 </div>
             }
-            <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
-            <p class="generator-note">Generated documents never invent skills, employment, qualifications, or metrics. Review every download before applying.</p>
-            <ul class="ats-checks">
-                @foreach (var check in atsResult.Checks)
+            @{
+                var totalSkills = atsResult.Skills.HardSkills.Count + atsResult.Skills.SoftSkills.Count; var hardShare = totalSkills == 0 ? 0 : Math.Round(atsResult.Skills.HardSkills.Count * 100d / totalSkills);
+            }
+            <div class="group-chart skills-chart"><div class="mini-donut skill-donut" style="--hard:@(hardShare * 3.6)deg"><span>@totalSkills</span></div><strong>Skill mix</strong><small>@atsResult.Skills.HardSkills.Count hard / @atsResult.Skills.SoftSkills.Count soft</small></div>
+        </div>
+        <ResumeCorrectionOptions Options="fixOptions"
+                                 Title="Corrections applied to every download"
+                                 Description="These selections are used for the fixed original, built-in templates, and uploaded templates."
+                                 ShowRecommendationButton="true"
+                                 EnableRecommended="EnableSafeForceCorrections">
+            <button type="button" class="generate-button" @onclick="ApplySelectedCorrectionsAndRecheckAsync"
+                    disabled="@(resume is null || isBusy)">
+                Apply selected corrections &amp; recheck ATS
+            </button>
+        </ResumeCorrectionOptions>
+        <div class="resume-actions">
+            <div class="output-option fix-output">
+                <h3>@(resume?.FileType == "PDF" ? "Rebuild corrected DOCX" : "Fix original formatting")</h3>
+                <p>@(resume?.FileType == "PDF" ? "Convert the PDF into a corrected, editable ATS-safe Word document." : "Preserve the uploaded Word layout and apply safe text corrections.")</p>
+                @if (resume?.FileType == "PDF")
                 {
-                    <li class="@MetricClass(check.Score)">
-                        <div class="metric-group">@check.Group</div>
-                        <div class="metric-heading"><strong>@check.Name</strong><span>@check.Score.ToString("0")%</span></div>
-                        <div class="metric-bar" role="progressbar" aria-label="@check.Name" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@check.Score"><i style="width:@(check.Score)%"></i></div>
-                        <p class="metric-evidence">@check.Evidence</p>
-                        <p>@check.Assessment</p>
-                        @if (!check.IsComplete) { <p class="metric-improvement"><strong>Improve:</strong> @check.Improvement</p> }
-                        else { <p class="metric-complete">@check.Improvement</p> }
-                    </li>
+                    <p class="format-warning"><strong>Layout warning:</strong> a PDF has fixed drawing instructions, not editable Word formatting. Upload the original DOCX as the resume if the corrected download must retain the exact layout.</p>
                 }
-            </ul>
+                <ResumeCorrectionOptions Options="fixOptions" />
+                <button class="generate-button" @onclick="FixOriginalAsync" disabled="@(resume is null || isBusy)">@(resume?.FileType == "PDF" ? "Download corrected DOCX" : "Download fixed original")</button>
+                @if (resume?.FileType == "PDF")
+                {
+                    <small>This action rebuilds the content; it does not preserve the PDF's exact formatting.</small>
+                }
+            </div>
+            <div class="output-option">
+                <h3>Apply a template</h3><p>Keep the same facts and rebuild them in a deterministic ATS-safe design.</p><select @bind="selectedTemplate" aria-label="Resume template">
+                @foreach (var template in ResumeImprovementService.Templates)
+                {
+                    <option value="@template.Id">@template.Name — @template.Description</option>
+                }
+            </select><button class="generate-button" @onclick="GenerateTemplateAsync" disabled="@isBusy">Generate styled DOCX</button>
+        </div>
+        <div class="output-option"><h3>Use uploaded template</h3><p>Upload a DOCX, PDF, or resume-layout image. Images are analyzed locally for palette and column structure.</p><InputFile OnChange="ReadTemplateAsync" accept=".docx,.pdf,.png,.jpg,.jpeg,.webp" class="template-file" /><small>@uploadedTemplateStatus</small><button class="generate-button" @onclick="GenerateUploadedTemplateAsync" disabled="@(uploadedTemplate is null || isBusy)">Convert with uploaded template</button></div>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(downloadStatus))
+    {
+        <p class="generator-note" role="status">@downloadStatus</p>
+    }
+    @if (fixReport.Count > 0)
+    {
+        <div class="fix-report" aria-live="polite">
+            <h3>Correction audit</h3>
+            @foreach (var item in fixReport)
+            {
+                <div class="fix-report-item @FixStatusClass(item.Status)">
+                    <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
+                </div>
+            }
+        </div>
+    }
+    <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
+    <p class="generator-note">Generated documents never invent skills, employment, qualifications, or metrics. Review every download before applying.</p>
+    <ul class="ats-checks">
+        @foreach (var check in atsResult.Checks)
+        {
+            <li class="@MetricClass(check.Score)">
+                <div class="metric-group">@check.Group</div>
+                <div class="metric-heading"><strong>@check.Name</strong><span>@check.Score.ToString("0")%</span></div>
+                <div class="metric-bar" role="progressbar" aria-label="@check.Name" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@check.Score"><i style="width:@(check.Score)%"></i></div>
+                <p class="metric-evidence">@check.Evidence</p>
+                <p>@check.Assessment</p>
+                @if (!check.IsComplete)
+                {
+                    <p class="metric-improvement"><strong>Improve:</strong> @check.Improvement</p>
+                }
+                else
+                {
+
+                    <p class="metric-complete">@check.Improvement</p>
+                }
+            </li>
         }
+    </ul>
+}
         else if (matchResult is not null)
-        {
-            <div class="score-ring @ScoreClass(matchResult.Score)">@matchResult.Score.ToString("0")<small>%</small></div><h2>@ScoreHeading(matchResult.Score)</h2><p>@matchResult.Summary</p>
-            @if (CanOpenJobUrl)
+{
+    <div class="score-ring @ScoreClass(matchResult.Score)">@matchResult.Score.ToString("0")<small>%</small></div><h2>@ScoreHeading(matchResult.Score)</h2><p>@matchResult.Summary</p>
+    @if (CanOpenJobUrl)
+    {
+        <a class="apply-job-link" href="@jobUrl" target="_blank" rel="noopener noreferrer">Open application page <span aria-hidden="true">↗</span></a>
+    }
+    <div class="term-columns"><div><h3 class="term-heading term-heading--strong">Strong matches</h3><TermList Terms="matchResult.MatchedTerms" EmptyText="No strong terms yet" Variant="strong" /></div><div><h3 class="term-heading term-heading--missing">Missing terms</h3><TermList Terms="FilteredMissingTerms" EmptyText="No notable gaps" Variant="missing" /></div></div>
+    <div class="match-generator">
+        <h3>Apply job-match improvements</h3>
+        <p>Selected terms are placed contextually: technologies stay in Skills, professional strengths go in the Summary, and architecture or operational requirements are attached to relevant experience evidence. Select only terms that truthfully describe your work.</p>
+        <ResumeCorrectionOptions Options="fixOptions"
+                                 Title="ATS objectives to apply with job tailoring"
+                                 Description="The same correction engine used by ATS Compatibility is applied to this download."
+                                 ShowRecommendationButton="true"
+                                 EnableRecommended="EnableSafeForceCorrections" />
+        <div class="match-term-options">
+            @foreach (var term in FilteredMissingTerms)
             {
-                <a class="apply-job-link" href="@jobUrl" target="_blank" rel="noopener noreferrer">Open application page <span aria-hidden="true">↗</span></a>
+                <label><input type="checkbox" checked="@selectedMatchTerms.Contains(term)" @onchange="args => ToggleMatchTerm(term, args)" />@term</label>
             }
-            <div class="term-columns"><div><h3 class="term-heading term-heading--strong">Strong matches</h3><TermList Terms="matchResult.MatchedTerms" EmptyText="No strong terms yet" Variant="strong" /></div><div><h3 class="term-heading term-heading--missing">Missing terms</h3><TermList Terms="matchResult.MissingTerms" EmptyText="No notable gaps" Variant="missing" /></div></div>
-            <div class="match-generator">
-                <h3>Apply job-match improvements</h3>
-                <p>Selected terms are placed contextually: technologies stay in Skills, professional strengths go in the Summary, and architecture or operational requirements are attached to relevant experience evidence. Select only terms that truthfully describe your work.</p>
-                <ResumeCorrectionOptions Options="fixOptions"
-                                         Title="ATS objectives to apply with job tailoring"
-                                         Description="The same correction engine used by ATS Compatibility is applied to this download."
-                                         ShowRecommendationButton="true"
-                                         EnableRecommended="EnableSafeForceCorrections" />
-                <div class="match-term-options">
-                    @foreach (var term in matchResult.MissingTerms)
-                    {
-                        <label><input type="checkbox" checked="@selectedMatchTerms.Contains(term)" @onchange="args => ToggleMatchTerm(term, args)" />@term</label>
-                    }
-                </div>
-                @if (selectedMatchTerms.Count > 0)
+        </div>
+        @if (selectedMatchTerms.Count > 0)
+        {
+            <div class="term-evidence-inputs">
+                <h4>Add truthful evidence for missing terms</h4>
+                <p>Each field starts with a polished, term-specific draft. Use it as-is only when it is true, or edit it to reflect your actual work. Your confirmed statement is added to the most relevant experience paragraph.</p>
+                @foreach (var term in selectedMatchTerms.OrderBy(term => term))
                 {
-                    <div class="term-evidence-inputs">
-                        <h4>Add truthful evidence for missing terms</h4>
-                        <p>Each field starts with a polished, term-specific draft. Use it as-is only when it is true, or edit it to reflect your actual work. Your confirmed statement is added to the most relevant experience paragraph.</p>
-                        @foreach (var term in selectedMatchTerms.OrderBy(term => term))
-                        {
-                            <label for="@EvidenceInputId(term)"><strong>@term</strong><textarea id="@EvidenceInputId(term)" rows="2" value="@EvidenceFor(term)" @oninput="args => SetEvidence(term, args.Value?.ToString())"></textarea></label>
-                            <label class="evidence-confirmation"><input type="checkbox" checked="@confirmedMatchTermEvidence.Contains(term)" @onchange="args => ConfirmEvidence(term, args)" /> I confirm this statement accurately describes my experience.</label>
-                        }
-                    </div>
+                    <label for="@EvidenceInputId(term)"><strong>@term</strong><textarea id="@EvidenceInputId(term)" rows="2" value="@EvidenceFor(term)" @oninput="args => SetEvidence(term, args.Value?.ToString())"></textarea></label>
+                    <label class="evidence-confirmation"><input type="checkbox" checked="@confirmedMatchTermEvidence.Contains(term)" @onchange="args => ConfirmEvidence(term, args)" /> I confirm this statement accurately describes my experience.</label>
                 }
-                <button class="generate-button" @onclick="TailorForJobAsync" disabled="@(resume is null || isBusy || !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))">Apply selected improvements &amp; download DOCX</button>
-                @if (resume is not null && !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))
-                {
-                    <p class="metric-improvement"><strong>Original formatting protection:</strong> Upload the original DOCX to enable tailoring. PDF analysis remains available, but PDF-to-Word reconstruction cannot retain the source's editable styles and layout.</p>
-                }
-                <small>A universal 100% ATS guarantee is not technically possible. The audit identifies every applied and withheld instruction.</small>
-                @if (!string.IsNullOrWhiteSpace(matchDownloadStatus)) { <p class="generator-note">@matchDownloadStatus</p> }
-                @if (matchFixReport.Count > 0)
-                {
-                    <div class="fix-report">
-                        <h3>Job-tailoring audit</h3>
-                        @foreach (var item in matchFixReport)
-                        {
-                            <div class="fix-report-item @FixStatusClass(item.Status)">
-                                <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
-                            </div>
-                        }
-                    </div>
-                }
-                <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
             </div>
         }
-    </section>
+        <button class="generate-button" @onclick="TailorForJobAsync" disabled="@(resume is null || isBusy || !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))">Apply selected improvements &amp; download DOCX</button>
+        @if (resume is not null && !resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))
+        {
+            <p class="metric-improvement"><strong>Original formatting protection:</strong> Upload the original DOCX to enable tailoring. PDF analysis remains available, but PDF-to-Word reconstruction cannot retain the source's editable styles and layout.</p>
+        }
+        <small>A universal 100% ATS guarantee is not technically possible. The audit identifies every applied and withheld instruction.</small>
+        @if (!string.IsNullOrWhiteSpace(matchDownloadStatus))
+        {
+            <p class="generator-note">@matchDownloadStatus</p>
+        }
+        @if (matchFixReport.Count > 0)
+        {
+            <div class="fix-report">
+                <h3>Job-tailoring audit</h3>
+                @foreach (var item in matchFixReport)
+                {
+                    <div class="fix-report-item @FixStatusClass(item.Status)">
+                        <strong>@item.Name</strong><span>@FixStatusLabel(item.Status)</span><p>@item.Detail</p>
+                    </div>
+                }
+            </div>
+        }
+        <CorrectionVerification Before="verificationBefore" After="verificationAfter" Integrity="verificationIntegrity" />
+    </div>
+}
+</section>
 </main>
 
 <section class="trust-copy"><h2>Resume analysis that respects your privacy</h2><p>Resume files are processed locally on your device and are never uploaded. When you import a job URL, only that public URL is sent to the page reader if the website blocks direct browser access.</p></section>
@@ -377,7 +428,7 @@
     private UploadedResumeTemplate? uploadedTemplate;
     private ImageTemplateAnalysis? imageTemplateAnalysis;
     private string uploadedTemplateStatus = "No template selected";
-    private ResumeFixOptions fixOptions = new();
+    private ProfessionalHub.ResumeTools.Models.ResumeFixOptions fixOptions = new();
     private IReadOnlyList<ResumeFixOutcome> fixReport = [];
     private IReadOnlyList<ResumeFixOutcome> matchFixReport = [];
     private AtsResult? verificationBefore;
@@ -820,17 +871,52 @@
         try
         {
             matchResult = Similarity.Compare(resume!.Text, jobDescription);
-            selectedMatchTerms = matchResult.MissingTerms.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            selectedMatchTerms = FilteredMissingTerms.ToHashSet(StringComparer.OrdinalIgnoreCase);
             matchTermEvidence.Clear();
             confirmedMatchTermEvidence.Clear();
             foreach (var term in selectedMatchTerms)
                 matchTermEvidence[term] = DefaultEvidenceDraft(term);
             matchFixReport = [];
             matchDownloadStatus = null;
-            await History.SaveAsync(new AnalysisRecord(DateTimeOffset.UtcNow, matchResult.Score, matchResult.MatchedTerms, matchResult.MissingTerms));
+            await History.SaveAsync(new AnalysisRecord(DateTimeOffset.UtcNow, matchResult.Score, matchResult.MatchedTerms, FilteredMissingTerms.ToList()));
         }
         catch (Exception ex) { error = $"Could not analyze this resume: {ex.Message}"; }
         finally { isBusy = false; }
+    }
+
+    private IReadOnlyList<string> FilteredMissingTerms => matchResult?.MissingTerms?.Where(IsValidProfessionalTerm).ToList() ?? [];
+
+    private static bool IsValidProfessionalTerm(string term)
+    {
+        if (string.IsNullOrWhiteSpace(term)) return false;
+        var cleanTerm = term.Trim();
+
+        if (cleanTerm.Length < 3) return false;
+
+        string[] noiseWords = {
+        "and", "the", "for", "with", "that", "this", "from", "you", "your",
+        "are", "was", "were", "will", "can", "has", "had", "our", "their",
+        "they", "she", "his", "her", "but", "not", "all", "any", "one", "out",
+        "who", "which", "also", "into", "more", "some", "such", "than", "then",
+        "these", "thus", "well", "what", "when", "where", "while", "delivering",
+        "excellent", "strong", "team", "barbados", "project", "work", "collaborating"
+    };
+
+        if (noiseWords.Contains(cleanTerm.ToLowerInvariant())) return false;
+
+        bool hasTechnicalSymbol = cleanTerm.Any(ch => "#+.0123456789".Contains(ch));
+        bool isAllUppercase = cleanTerm.Length <= 5 && cleanTerm.All(char.IsUpper);
+
+        if (!hasTechnicalSymbol && !isAllUppercase && char.IsUpper(cleanTerm[0]) && cleanTerm.Skip(1).All(char.IsLower))
+        {
+            string[] allowedCapitalized = { "DotNet", "TypeScript", "JavaScript", "GitHub", "PostgreSQL", "MongoDB" };
+            if (!allowedCapitalized.Contains(cleanTerm, StringComparer.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static string ScoreClass(double score) => score >= 80 ? "good" : score >= 60 ? "fair" : "low";
@@ -863,28 +949,92 @@
         else confirmedMatchTermEvidence.Remove(term);
     }
     private static string EvidenceInputId(string term) => "evidence-" + string.Concat(term.Where(char.IsLetterOrDigit)).ToLowerInvariant();
-    private static string DefaultEvidenceDraft(string term)
+
+    private string DefaultEvidenceDraft(string term)
+    {
+        if (string.IsNullOrWhiteSpace(term))
+            return "Applied this requirement successfully across project deliverables.";
+
+        var cleanTerm = term.Trim();
+
+        // 1. Try to extract dynamic context directly from the job description sentences
+        if (!string.IsNullOrWhiteSpace(jobDescription))
+        {
+            try
+            {
+                var sentences = jobDescription.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+                var matchingSentence = sentences
+                    .FirstOrDefault(s => s.Contains(cleanTerm, StringComparison.OrdinalIgnoreCase));
+
+                if (!string.IsNullOrWhiteSpace(matchingSentence))
+                {
+                    var cleanedSentence = matchingSentence.Trim();
+                    return ChooseContextualDraft(cleanTerm, cleanedSentence);
+                }
+            }
+            catch
+            {
+                // Fall back to algorithmic variation if splitting fails
+            }
+        }
+
+        // 2. Fully Automated & Varied Algorithmic Fallback
+        return BuildVariedDynamicStatement(cleanTerm);
+    }
+
+    private static string ChooseContextualDraft(string term, string sentence)
+    {
+        int variant = Math.Abs(term.GetHashCode()) % 3;
+        var lowerSentence = LowercaseFirst(sentence);
+
+        return variant switch
+        {
+            0 => $"Spearheaded initiatives involving {term}, directly contributing to goals concerning {lowerSentence}.",
+            1 => $"Utilized deep proficiency in {term} to execute core deliverables, ensuring alignment with requirements like {lowerSentence}.",
+            _ => $"Applied hands-on expertise in {term} to optimize performance and fulfill project objectives around {lowerSentence}."
+        };
+    }
+
+    private static string BuildVariedDynamicStatement(string term)
     {
         var lower = term.ToLowerInvariant();
-        if (lower.Contains("angular") || lower.Contains("react") || lower.Contains("vue"))
-            return $"Developed and maintained user-facing application features using {term}, collaborating with the team to deliver reliable releases.";
-        if (lower.Contains("aws") || lower.Contains("azure") || lower.Contains("gcp") || lower.Contains("cloud"))
-            return $"Used {term} to support deployment, configuration, and reliable operation of application services.";
-        if (lower.Contains("graphql") || lower.Contains("api"))
-            return $"Designed and integrated {term} interfaces to support secure data exchange between application services.";
-        if (lower.Contains("kubernetes") || lower.Contains("docker"))
-            return $"Used {term} to package, deploy, and support application services across development environments.";
-        if (lower.Contains("observability") || lower.Contains("monitor"))
-            return $"Improved {term} by reviewing application signals, investigating issues, and supporting reliable service operation.";
-        if (lower.Contains("postgres") || lower.Contains("sql") || lower.Contains("database"))
-            return $"Used {term} to design, query, and maintain data needed by application features and reporting.";
-        if (lower.Contains("scalability") || lower.Contains("distributed"))
-            return $"Contributed to {term} improvements by designing services and integrations that supported reliable growth.";
-        if (lower.Contains("leadership") || lower.Contains("communication"))
-            return $"Applied {term} by coordinating with colleagues, clarifying technical work, and supporting shared delivery goals.";
-        if (lower.Contains("quality"))
-            return $"Applied {term} practices through peer review, testing, and careful validation before releasing changes.";
-        return $"Applied {term} in relevant project work, collaborating with the team to deliver reliable outcomes.";
+        int seed = Math.Abs(term.GetHashCode()) % 4;
+
+        if (lower.EndsWith("ing") || lower.Contains("management") || lower.Contains("analysis") || lower.Contains("development"))
+        {
+            return seed switch
+            {
+                0 => "Directed and executed full life-cycle workflows for " + term + ", implementing robust standards to maximize output quality.",
+                1 => "Led core initiatives focused on " + term + ", driving operational efficiency and cross-functional collaboration.",
+                2 => "Spearheaded complex requirements related to " + term + ", establishing best practices and measurable milestones.",
+                _ => "Engineered scalable solutions integrating " + term + ", aligning technical outcomes with overarching business goals."
+            };
+        }
+
+        if (lower.Length <= 6 && lower.All(char.IsUpper))
+        {
+            return seed switch
+            {
+                0 => "Architected and maintained infrastructure utilizing " + term + ", ensuring high availability, security, and scalability.",
+                1 => "Integrated " + term + " into distributed production environments to streamline data pipelines and service delivery.",
+                2 => "Optimized system performance and reliability through advanced configuration and deployment of " + term + ".",
+                _ => "Administered core components built on " + term + ", resolving critical bottlenecks and automating deployment workflows."
+            };
+        }
+
+        return seed switch
+        {
+            0 => "Designed, tested, and deployed solutions incorporating " + term + ", achieving seamless integration across systems.",
+            1 => "Collaborated with engineering teams to apply " + term + ", successfully resolving technical challenges and meeting deadlines.",
+            2 => "Delivered high-impact results using " + term + ", emphasizing performance tuning and maintainable architecture.",
+            _ => "Implemented structured frameworks utilizing " + term + ", enhancing system capability and long-term maintainability."
+        };
+    }
+
+    private static string LowercaseFirst(string text)
+    {
+        if (string.IsNullOrEmpty(text) || char.IsLower(text[0])) return text;
+        return char.ToLowerInvariant(text[0]) + text[1..];
     }
 
     private async Task TailorForJobAsync()
@@ -923,7 +1073,7 @@
     private async Task FixOriginalAsync()
     {
         if (resume is null) return;
-        isBusy=true; error=null; downloadStatus=null; fixReport=[]; busyTitle="Fixing original resume"; busyDetail="Preserving layout while applying safe text corrections..."; await InvokeAsync(StateHasChanged); await Task.Yield();
+        isBusy = true; error = null; downloadStatus = null; fixReport = []; busyTitle = "Fixing original resume"; busyDetail = "Preserving layout while applying safe text corrections..."; await InvokeAsync(StateHasChanged); await Task.Yield();
         try
         {
             EnableSafeForceCorrections();
@@ -939,7 +1089,7 @@
             downloadStatus = $"Fixed original downloaded ({bytes.Length / 1024d:N0} KB). Check your Downloads folder.";
         }
         catch (Exception ex) { error = $"Could not fix the original resume: {ex.Message}"; }
-        finally { isBusy=false; }
+        finally { isBusy = false; }
     }
 
     private async Task ApplySelectedCorrectionsAndRecheckAsync()
@@ -1013,11 +1163,11 @@
     private async Task GenerateTemplateAsync()
     {
         if (resume is null) return;
-        isBusy=true; busyTitle="Applying resume template"; busyDetail="Rebuilding the same factual content with ATS-safe styles..."; await InvokeAsync(StateHasChanged); await Task.Yield();
+        isBusy = true; busyTitle = "Applying resume template"; busyDetail = "Rebuilding the same factual content with ATS-safe styles..."; await InvokeAsync(StateHasChanged); await Task.Yield();
         try
         {
             EnableSafeForceCorrections();
-            fixReport=[];
+            fixReport = [];
             var result = Improver.GenerateWithReport(resume, selectedTemplate, fixOptions);
             await CaptureCorrectionVerificationAsync(resume, result, $"Corrected-Resume-{selectedTemplate}.docx");
             fixReport = result.Outcomes;
@@ -1025,43 +1175,43 @@
             downloadStatus = $"Corrected {selectedTemplate} template downloaded ({result.Bytes.Length / 1024d:N0} KB).";
         }
         catch (Exception ex) { error = $"Could not apply the template: {ex.Message}"; }
-        finally { isBusy=false; }
+        finally { isBusy = false; }
     }
 
     private async Task ReadTemplateAsync(InputFileChangeEventArgs args)
     {
         try
         {
-            var file=args.File; var extension=Path.GetExtension(file.Name).ToLowerInvariant();
-            if(extension is not (".docx" or ".pdf" or ".png" or ".jpg" or ".jpeg" or ".webp")) throw new NotSupportedException("Template must be DOCX, PDF, PNG, JPG, or WebP.");
-            await using var input=file.OpenReadStream(MaxFileSize); await using var buffer=new MemoryStream(); await input.CopyToAsync(buffer);
-            var bytes=buffer.ToArray(); uploadedTemplate=new UploadedResumeTemplate(file.Name,extension[1..].ToUpperInvariant(),bytes); imageTemplateAnalysis=null;
-            if(extension is ".png" or ".jpg" or ".jpeg" or ".webp")
+            var file = args.File; var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (extension is not (".docx" or ".pdf" or ".png" or ".jpg" or ".jpeg" or ".webp")) throw new NotSupportedException("Template must be DOCX, PDF, PNG, JPG, or WebP.");
+            await using var input = file.OpenReadStream(MaxFileSize); await using var buffer = new MemoryStream(); await input.CopyToAsync(buffer);
+            var bytes = buffer.ToArray(); uploadedTemplate = new UploadedResumeTemplate(file.Name, extension[1..].ToUpperInvariant(), bytes); imageTemplateAnalysis = null;
+            if (extension is ".png" or ".jpg" or ".jpeg" or ".webp")
             {
-                imageTemplateAnalysis=await JS.InvokeAsync<ImageTemplateAnalysis>("professionalHub.images.analyzeTemplate",Convert.ToBase64String(bytes),file.ContentType);
-                uploadedTemplateStatus=$"Ready: {file.Name} / {imageTemplateAnalysis.Layout} / accent #{imageTemplateAnalysis.AccentHex}";
+                imageTemplateAnalysis = await JS.InvokeAsync<ImageTemplateAnalysis>("professionalHub.images.analyzeTemplate", Convert.ToBase64String(bytes), file.ContentType);
+                uploadedTemplateStatus = $"Ready: {file.Name} / {imageTemplateAnalysis.Layout} / accent #{imageTemplateAnalysis.AccentHex}";
             }
-            else uploadedTemplateStatus=$"Ready: {file.Name}";
+            else uploadedTemplateStatus = $"Ready: {file.Name}";
         }
-        catch(Exception ex) { uploadedTemplate=null; uploadedTemplateStatus=ex.Message; }
+        catch (Exception ex) { uploadedTemplate = null; uploadedTemplateStatus = ex.Message; }
     }
 
     private async Task GenerateUploadedTemplateAsync()
     {
-        if(resume is null || uploadedTemplate is null) return;
-        isBusy=true; busyTitle="Applying uploaded template"; busyDetail="Mapping resume content to the supplied design..."; await InvokeAsync(StateHasChanged); await Task.Yield();
+        if (resume is null || uploadedTemplate is null) return;
+        isBusy = true; busyTitle = "Applying uploaded template"; busyDetail = "Mapping resume content to the supplied design..."; await InvokeAsync(StateHasChanged); await Task.Yield();
         try
         {
             EnableSafeForceCorrections();
-            fixReport=[];
-            var result=Improver.GenerateFromUploadedTemplateWithReport(resume,uploadedTemplate,imageTemplateAnalysis,fixOptions); uploadedTemplateStatus=result.Message;
+            fixReport = [];
+            var result = Improver.GenerateFromUploadedTemplateWithReport(resume, uploadedTemplate, imageTemplateAnalysis, fixOptions); uploadedTemplateStatus = result.Message;
             await CaptureCorrectionVerificationAsync(resume, result, "Resume-uploaded-template.docx");
-            fixReport=result.Outcomes;
-            await JS.InvokeVoidAsync("professionalHub.files.downloadBase64","Resume-uploaded-template.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",Convert.ToBase64String(result.Bytes));
+            fixReport = result.Outcomes;
+            await JS.InvokeVoidAsync("professionalHub.files.downloadBase64", "Resume-uploaded-template.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Convert.ToBase64String(result.Bytes));
             downloadStatus = $"Corrected uploaded-template resume downloaded ({result.Bytes.Length / 1024d:N0} KB).";
         }
-        catch(Exception ex) { error=$"Could not use the uploaded template: {ex.Message}"; }
-        finally { isBusy=false; }
+        catch (Exception ex) { error = $"Could not use the uploaded template: {ex.Message}"; }
+        finally { isBusy = false; }
     }
     private enum ToolMode { Ats, JobMatch }
 }

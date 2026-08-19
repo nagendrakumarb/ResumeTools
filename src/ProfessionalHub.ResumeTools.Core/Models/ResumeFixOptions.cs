@@ -11,6 +11,7 @@ public sealed class ResumeFixOptions
     public bool ForceBalanceBoldUsage { get; set; }
     public bool RemoveRepeatedContent { get; set; } = true;
     public bool ImproveReadingClarity { get; set; } = true;
+    public bool FixGrammarAndSyntax { get; set; } = true; // Added property
     public bool AddEvidenceBackedStrengths { get; set; } = true;
     public bool ForceEvidenceBackedStrengths { get; set; }
 }

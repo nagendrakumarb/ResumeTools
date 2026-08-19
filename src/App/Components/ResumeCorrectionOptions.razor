@@ -6,9 +6,23 @@
     }
     @if (ShowRecommendationButton)
     {
-        <button type="button" class="secondary-button" @onclick="EnableRecommended">
+        <!-- Check: Added style="color: #495057 !important;" to prevent the text from turning white and disappearing on focus -->
+        <!-- Check: Added hover/focus rules so the text and border change to your site's default green color when focused or hovered -->
+        <button type="button" class="btn btn-outline-secondary btn-sm bg-white shadow-sm mb-2 custom-green-btn" @onclick="EnableRecommended">
             Enable force flags for unmet safe objectives
         </button>
+
+        <style>
+                .custom-green-btn {
+                    color: #495057 !important;
+                }
+                    /* Changes text and border color to your site's green on focus or hover */
+                    .custom-green-btn:focus,
+                    .custom-green-btn:hover {
+                        color: #198754 !important; /* Replace #198754 with your site's specific green hex code if different */
+                        border-color: #198754 !important;
+                    }
+        </style>
     }
     <div class="fix-option-grid">
         <label><input type="checkbox" @bind="Options.AddProfessionalSummaryHeading" /> Standard summary heading</label>
@@ -20,6 +34,7 @@
         <label class="force-option"><input type="checkbox" @bind="Options.ForceBalanceBoldUsage" disabled="@(!Options.BalanceBoldUsage)" /> Force bold balancing while preserving hierarchy</label>
         <label><input type="checkbox" @bind="Options.RemoveRepeatedContent" /> Remove exact repetition</label>
         <label><input type="checkbox" @bind="Options.ImproveReadingClarity" /> Improve long-line clarity</label>
+        <label><input type="checkbox" @bind="Options.FixGrammarAndSyntax" /> Correct grammar and spelling errors</label>
         <label><input type="checkbox" @bind="Options.AddEvidenceBackedStrengths" /> Add evidenced strengths</label>
         <label class="force-option"><input type="checkbox" @bind="Options.ForceEvidenceBackedStrengths" disabled="@(!Options.AddEvidenceBackedStrengths)" /> Force supported soft-skill coverage</label>
     </div>

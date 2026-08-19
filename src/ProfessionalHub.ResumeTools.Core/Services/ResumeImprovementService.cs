@@ -16,7 +16,7 @@ public sealed partial class ResumeImprovementService
     private const string Teal = "0F766E";
     private const string Gray = "52667A";
     private static readonly Dictionary<string, string> Corrections = new(StringComparer.OrdinalIgnoreCase)
-    { ["recieve"]="receive", ["seperate"]="separate", ["occured"]="occurred", ["managment"]="management", ["experiance"]="experience", ["developement"]="development", ["acheived"]="achieved", ["sucessful"]="successful" };
+    { ["recieve"] = "receive", ["seperate"] = "separate", ["occured"] = "occurred", ["managment"] = "management", ["experiance"] = "experience", ["developement"] = "development", ["acheived"] = "achieved", ["sucessful"] = "successful" };
     private static readonly HashSet<string> KnownHeadings = new(StringComparer.OrdinalIgnoreCase)
     { "summary", "professional summary", "profile", "skills", "technical skills", "core competencies", "core strengths", "experience", "professional experience", "work experience", "employment", "education", "certifications", "projects", "project highlights", "achievements", "current status" };
     private static readonly HashSet<string> UnsafeJobTerms = new(StringComparer.OrdinalIgnoreCase)
@@ -137,7 +137,8 @@ public sealed partial class ResumeImprovementService
                             continue;
                         if (!RemoveGeneratedTerm(concentratedSkills, term)) continue;
                         alreadyPresent.RemoveAll(item => item.Equals(term, StringComparison.OrdinalIgnoreCase));
-                        if (!termsToAdd.Contains(term, StringComparer.OrdinalIgnoreCase)) termsToAdd.Add(term);
+                        if (!termsToAdd.Contains(term, StringComparer.OrdinalIgnoreCase))
+                            termsToAdd.Add(term);
                     }
                 }
                 var placements = PlanContextualPlacements(body, termsToAdd, options.EvidenceStatements);
@@ -860,11 +861,11 @@ public sealed partial class ResumeImprovementService
     {
         var anchors = ContextAnchors(term);
         return evidenceParagraphs.Select(paragraph => new
-            {
-                Paragraph = paragraph,
-                AnchorScore = anchors.Count(anchor => paragraph.InnerText.Contains(anchor, StringComparison.OrdinalIgnoreCase)),
-                Load = paragraphLoad.GetValueOrDefault(paragraph)
-            })
+        {
+            Paragraph = paragraph,
+            AnchorScore = anchors.Count(anchor => paragraph.InnerText.Contains(anchor, StringComparison.OrdinalIgnoreCase)),
+            Load = paragraphLoad.GetValueOrDefault(paragraph)
+        })
             .OrderByDescending(candidate => candidate.AnchorScore)
             .ThenBy(candidate => candidate.Load)
             .ThenBy(candidate => candidate.Paragraph.InnerText.Length)
@@ -1194,29 +1195,29 @@ public sealed partial class ResumeImprovementService
                 var paragraph = style.StyleParagraphProperties;
                 if (run is null || paragraph is null) continue;
                 if (options.ForceCompactPageLayout) switch (style.StyleId?.Value)
-                {
-                    case "ResumeName":
-                        run.FontSize = new FontSize { Val = "48" };
-                        paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "0", After = "15", Line = "220", LineRule = LineSpacingRuleValues.Auto };
-                        break;
-                    case "ResumeSubtitle":
-                        run.FontSize = new FontSize { Val = "21" };
-                        paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "0", After = "20", Line = "215", LineRule = LineSpacingRuleValues.Auto };
-                        break;
-                    case "ResumeSection":
-                        run.FontSize = new FontSize { Val = "20" };
-                        paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "85", After = "25", Line = "215", LineRule = LineSpacingRuleValues.Auto };
-                        break;
-                    case "ResumeRole":
-                        run.FontSize = new FontSize { Val = "18" };
-                        paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "45", After = "10", Line = "210", LineRule = LineSpacingRuleValues.Auto };
-                        break;
-                    default:
-                        run.FontSize = new FontSize { Val = "17" };
-                        paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "0", After = "12", Line = "205", LineRule = LineSpacingRuleValues.Auto };
-                        if (options.ForceBalanceBoldUsage) run.Bold?.Remove();
-                        break;
-                }
+                    {
+                        case "ResumeName":
+                            run.FontSize = new FontSize { Val = "48" };
+                            paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "0", After = "15", Line = "220", LineRule = LineSpacingRuleValues.Auto };
+                            break;
+                        case "ResumeSubtitle":
+                            run.FontSize = new FontSize { Val = "21" };
+                            paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "0", After = "20", Line = "215", LineRule = LineSpacingRuleValues.Auto };
+                            break;
+                        case "ResumeSection":
+                            run.FontSize = new FontSize { Val = "20" };
+                            paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "85", After = "25", Line = "215", LineRule = LineSpacingRuleValues.Auto };
+                            break;
+                        case "ResumeRole":
+                            run.FontSize = new FontSize { Val = "18" };
+                            paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "45", After = "10", Line = "210", LineRule = LineSpacingRuleValues.Auto };
+                            break;
+                        default:
+                            run.FontSize = new FontSize { Val = "17" };
+                            paragraph.SpacingBetweenLines = new SpacingBetweenLines { Before = "0", After = "12", Line = "205", LineRule = LineSpacingRuleValues.Auto };
+                            if (options.ForceBalanceBoldUsage) run.Bold?.Remove();
+                            break;
+                    }
             }
             var body = document.MainDocumentPart?.Document.Body;
             var section = body?.Elements<SectionProperties>().LastOrDefault();
@@ -1235,7 +1236,7 @@ public sealed partial class ResumeImprovementService
     {
         if (template.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase))
         {
-            using var source = new MemoryStream(); source.Write(template.Bytes); source.Position=0;
+            using var source = new MemoryStream(); source.Write(template.Bytes); source.Position = 0;
             var populated = false;
             using (var document = WordprocessingDocument.Open(source, true))
             {
@@ -1413,10 +1414,10 @@ public sealed partial class ResumeImprovementService
     {
         var theme = templateId.ToLowerInvariant() switch
         {
-            "classic" => (Font:"Georgia", Heading:"7F1D1D", Accent:"A16207"),
-            "modern" => (Font:"Arial", Heading:"1D4ED8", Accent:"0891B2"),
-            "technical" => (Font:"Arial", Heading:"334155", Accent:"7C3AED"),
-            _ => (Font:"Aptos", Heading:Navy, Accent:Teal)
+            "classic" => (Font: "Georgia", Heading: "7F1D1D", Accent: "A16207"),
+            "modern" => (Font: "Arial", Heading: "1D4ED8", Accent: "0891B2"),
+            "technical" => (Font: "Arial", Heading: "334155", Accent: "7C3AED"),
+            _ => (Font: "Aptos", Heading: Navy, Accent: Teal)
         };
         using var stream = new MemoryStream(); stream.Write(source); stream.Position = 0;
         using (var document = WordprocessingDocument.Open(stream, true))
@@ -1428,10 +1429,10 @@ public sealed partial class ResumeImprovementService
                 {
                     var run = style.StyleRunProperties;
                     if (run is null) continue;
-                    run.RunFonts = new RunFonts { Ascii=theme.Font, HighAnsi=theme.Font };
+                    run.RunFonts = new RunFonts { Ascii = theme.Font, HighAnsi = theme.Font };
                     var styleId = style.StyleId?.Value;
-                    if (styleId is "ResumeName" or "ResumeSection" or "ResumeRole") run.Color = new Color { Val=theme.Heading };
-                    else if (styleId == "ResumeSubtitle") run.Color = new Color { Val=theme.Accent };
+                    if (styleId is "ResumeName" or "ResumeSection" or "ResumeRole") run.Color = new Color { Val = theme.Heading };
+                    else if (styleId == "ResumeSubtitle") run.Color = new Color { Val = theme.Accent };
                 }
                 styles.Save();
             }
@@ -1445,30 +1446,30 @@ public sealed partial class ResumeImprovementService
 
     private static byte[] ApplyReferenceTheme(byte[] source, byte[] templateBytes)
     {
-        string font="Aptos", heading=Navy; PageMargin? sourceMargin=null; PageSize? sourceSize=null; uint columnCount=1; JustificationValues? titleAlignment=null;
-        using (var templateStream=new MemoryStream(templateBytes))
-        using (var template=WordprocessingDocument.Open(templateStream,false))
+        string font = "Aptos", heading = Navy; PageMargin? sourceMargin = null; PageSize? sourceSize = null; uint columnCount = 1; JustificationValues? titleAlignment = null;
+        using (var templateStream = new MemoryStream(templateBytes))
+        using (var template = WordprocessingDocument.Open(templateStream, false))
         {
-            var styles=template.MainDocumentPart?.StyleDefinitionsPart?.Styles;
-            font=styles?.Descendants<RunFonts>().Select(x=>x.Ascii?.Value).FirstOrDefault(x=>!string.IsNullOrWhiteSpace(x)) ?? font;
-            heading=styles?.Elements<Style>().Where(x=>(x.StyleId?.Value ?? "").Contains("Heading",StringComparison.OrdinalIgnoreCase)).Select(x=>x.StyleRunProperties?.Color?.Val?.Value).FirstOrDefault(x=>!string.IsNullOrWhiteSpace(x)) ?? heading;
-            var section=template.MainDocumentPart?.Document.Body?.Elements<SectionProperties>().LastOrDefault();
-            sourceMargin=section?.GetFirstChild<PageMargin>()?.CloneNode(true) as PageMargin; sourceSize=section?.GetFirstChild<PageSize>()?.CloneNode(true) as PageSize; columnCount=(uint)(section?.GetFirstChild<Columns>()?.ColumnCount?.Value ?? 1);
-            titleAlignment=template.MainDocumentPart?.Document.Body?.Elements<Paragraph>().FirstOrDefault(p=>!string.IsNullOrWhiteSpace(p.InnerText))?.ParagraphProperties?.Justification?.Val?.Value;
+            var styles = template.MainDocumentPart?.StyleDefinitionsPart?.Styles;
+            font = styles?.Descendants<RunFonts>().Select(x => x.Ascii?.Value).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? font;
+            heading = styles?.Elements<Style>().Where(x => (x.StyleId?.Value ?? "").Contains("Heading", StringComparison.OrdinalIgnoreCase)).Select(x => x.StyleRunProperties?.Color?.Val?.Value).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? heading;
+            var section = template.MainDocumentPart?.Document.Body?.Elements<SectionProperties>().LastOrDefault();
+            sourceMargin = section?.GetFirstChild<PageMargin>()?.CloneNode(true) as PageMargin; sourceSize = section?.GetFirstChild<PageSize>()?.CloneNode(true) as PageSize; columnCount = (uint)(section?.GetFirstChild<Columns>()?.ColumnCount?.Value ?? 1);
+            titleAlignment = template.MainDocumentPart?.Document.Body?.Elements<Paragraph>().FirstOrDefault(p => !string.IsNullOrWhiteSpace(p.InnerText))?.ParagraphProperties?.Justification?.Val?.Value;
         }
-        using var stream=new MemoryStream(); stream.Write(source); stream.Position=0;
-        using (var document=WordprocessingDocument.Open(stream,true))
+        using var stream = new MemoryStream(); stream.Write(source); stream.Position = 0;
+        using (var document = WordprocessingDocument.Open(stream, true))
         {
-            foreach(var style in document.MainDocumentPart?.StyleDefinitionsPart?.Styles?.Elements<Style>() ?? [])
+            foreach (var style in document.MainDocumentPart?.StyleDefinitionsPart?.Styles?.Elements<Style>() ?? [])
             {
-                if(style.StyleRunProperties is null) continue;
-                style.StyleRunProperties.RunFonts=new RunFonts{Ascii=font,HighAnsi=font};
-                if(style.StyleId?.Value is "ResumeName" or "ResumeSection" or "ResumeRole") style.StyleRunProperties.Color=new Color{Val=heading};
+                if (style.StyleRunProperties is null) continue;
+                style.StyleRunProperties.RunFonts = new RunFonts { Ascii = font, HighAnsi = font };
+                if (style.StyleId?.Value is "ResumeName" or "ResumeSection" or "ResumeRole") style.StyleRunProperties.Color = new Color { Val = heading };
             }
-            var body=document.MainDocumentPart?.Document.Body; var finalSection=body?.Elements<SectionProperties>().LastOrDefault();
-            if(finalSection is not null) { if(sourceMargin is not null) { finalSection.GetFirstChild<PageMargin>()?.Remove(); finalSection.Append(sourceMargin); } if(sourceSize is not null) { finalSection.GetFirstChild<PageSize>()?.Remove(); finalSection.PrependChild(sourceSize); } }
-            var name=body?.Elements<Paragraph>().FirstOrDefault(p=>p.ParagraphProperties?.ParagraphStyleId?.Val?.Value=="ResumeName"); if(name is not null && titleAlignment is not null) { name.ParagraphProperties ??=new ParagraphProperties(); name.ParagraphProperties.Justification=new Justification{Val=titleAlignment}; }
-            if(columnCount>1) ApplyColumns(document,Math.Min(columnCount,2));
+            var body = document.MainDocumentPart?.Document.Body; var finalSection = body?.Elements<SectionProperties>().LastOrDefault();
+            if (finalSection is not null) { if (sourceMargin is not null) { finalSection.GetFirstChild<PageMargin>()?.Remove(); finalSection.Append(sourceMargin); } if (sourceSize is not null) { finalSection.GetFirstChild<PageSize>()?.Remove(); finalSection.PrependChild(sourceSize); } }
+            var name = body?.Elements<Paragraph>().FirstOrDefault(p => p.ParagraphProperties?.ParagraphStyleId?.Val?.Value == "ResumeName"); if (name is not null && titleAlignment is not null) { name.ParagraphProperties ??= new ParagraphProperties(); name.ParagraphProperties.Justification = new Justification { Val = titleAlignment }; }
+            if (columnCount > 1) ApplyColumns(document, Math.Min(columnCount, 2));
             document.MainDocumentPart?.Document.Save();
         }
         return stream.ToArray();
@@ -1476,31 +1477,31 @@ public sealed partial class ResumeImprovementService
 
     private static void ApplyBuiltInLayout(WordprocessingDocument document, string templateId, string heading, string accent)
     {
-        var body=document.MainDocumentPart?.Document.Body; if(body is null) return;
-        var name=body.Elements<Paragraph>().FirstOrDefault(p=>p.ParagraphProperties?.ParagraphStyleId?.Val?.Value=="ResumeName");
-        var subtitle=body.Elements<Paragraph>().FirstOrDefault(p=>p.ParagraphProperties?.ParagraphStyleId?.Val?.Value=="ResumeSubtitle");
-        var contact=body.Elements<Paragraph>().FirstOrDefault(p=>p.ParagraphProperties?.ParagraphStyleId?.Val?.Value=="ResumeContact");
-        if(templateId.Equals("classic",StringComparison.OrdinalIgnoreCase))
+        var body = document.MainDocumentPart?.Document.Body; if (body is null) return;
+        var name = body.Elements<Paragraph>().FirstOrDefault(p => p.ParagraphProperties?.ParagraphStyleId?.Val?.Value == "ResumeName");
+        var subtitle = body.Elements<Paragraph>().FirstOrDefault(p => p.ParagraphProperties?.ParagraphStyleId?.Val?.Value == "ResumeSubtitle");
+        var contact = body.Elements<Paragraph>().FirstOrDefault(p => p.ParagraphProperties?.ParagraphStyleId?.Val?.Value == "ResumeContact");
+        if (templateId.Equals("classic", StringComparison.OrdinalIgnoreCase))
         {
-            foreach(var p in new[]{name,subtitle,contact}.Where(p=>p is not null)) { p!.ParagraphProperties ??=new ParagraphProperties(); p.ParagraphProperties.Justification=new Justification{Val=JustificationValues.Left}; }
+            foreach (var p in new[] { name, subtitle, contact }.Where(p => p is not null)) { p!.ParagraphProperties ??= new ParagraphProperties(); p.ParagraphProperties.Justification = new Justification { Val = JustificationValues.Left }; }
         }
-        else if(templateId.Equals("modern",StringComparison.OrdinalIgnoreCase))
+        else if (templateId.Equals("modern", StringComparison.OrdinalIgnoreCase))
         {
-            ApplyColumns(document,2);
-            if(name is not null) { name.ParagraphProperties ??=new ParagraphProperties(); name.ParagraphProperties.Shading=new Shading{Val=ShadingPatternValues.Clear,Fill="EAF4FF"}; }
+            ApplyColumns(document, 2);
+            if (name is not null) { name.ParagraphProperties ??= new ParagraphProperties(); name.ParagraphProperties.Shading = new Shading { Val = ShadingPatternValues.Clear, Fill = "EAF4FF" }; }
         }
-        else if(templateId.Equals("technical",StringComparison.OrdinalIgnoreCase))
+        else if (templateId.Equals("technical", StringComparison.OrdinalIgnoreCase))
         {
-            foreach(var p in body.Elements<Paragraph>().Where(p=>p.ParagraphProperties?.ParagraphStyleId?.Val?.Value=="ResumeSection"))
-            { p.ParagraphProperties ??=new ParagraphProperties(); p.ParagraphProperties.Shading=new Shading{Val=ShadingPatternValues.Clear,Fill="F1F5F9"}; p.ParagraphProperties.Indentation=new Indentation{Left="100"}; }
+            foreach (var p in body.Elements<Paragraph>().Where(p => p.ParagraphProperties?.ParagraphStyleId?.Val?.Value == "ResumeSection"))
+            { p.ParagraphProperties ??= new ParagraphProperties(); p.ParagraphProperties.Shading = new Shading { Val = ShadingPatternValues.Clear, Fill = "F1F5F9" }; p.ParagraphProperties.Indentation = new Indentation { Left = "100" }; }
         }
     }
 
     private static void ApplyColumns(WordprocessingDocument document, uint count)
     {
-        var ruleParagraph=document.MainDocumentPart?.Document.Descendants<Paragraph>().FirstOrDefault(p=>p.ParagraphProperties?.ParagraphBorders?.BottomBorder is not null);
-        if(ruleParagraph is null) return; ruleParagraph.ParagraphProperties ??=new ParagraphProperties();
-        ruleParagraph.ParagraphProperties.SectionProperties=new SectionProperties(new SectionType{Val=SectionMarkValues.Continuous},new Columns{ColumnCount=(short)count,Space="420",EqualWidth=true});
+        var ruleParagraph = document.MainDocumentPart?.Document.Descendants<Paragraph>().FirstOrDefault(p => p.ParagraphProperties?.ParagraphBorders?.BottomBorder is not null);
+        if (ruleParagraph is null) return; ruleParagraph.ParagraphProperties ??= new ParagraphProperties();
+        ruleParagraph.ParagraphProperties.SectionProperties = new SectionProperties(new SectionType { Val = SectionMarkValues.Continuous }, new Columns { ColumnCount = (short)count, Space = "420", EqualWidth = true });
     }
 
     private static byte[] ApplyImageTheme(byte[] source, ImageTemplateAnalysis analysis)
@@ -1510,8 +1511,8 @@ public sealed partial class ResumeImprovementService
         if (!analysis.Layout.Equals("two-column", StringComparison.OrdinalIgnoreCase))
             return ApplyImageSingleColumnTheme(source, analysis with { AccentHex = accent });
 
-        using var stream=new MemoryStream(); stream.Write(source); stream.Position=0;
-        using (var document=WordprocessingDocument.Open(stream,true))
+        using var stream = new MemoryStream(); stream.Write(source); stream.Position = 0;
+        using (var document = WordprocessingDocument.Open(stream, true))
         {
             var main = document.MainDocumentPart;
             var body = main?.Document.Body;
@@ -1573,8 +1574,8 @@ public sealed partial class ResumeImprovementService
             section.PrependChild(new PageSize { Width = 12240, Height = 15840 });
             body.Append(section);
 
-            var styles=main.StyleDefinitionsPart?.Styles;
-            foreach(var style in styles?.Elements<Style>() ?? [])
+            var styles = main.StyleDefinitionsPart?.Styles;
+            foreach (var style in styles?.Elements<Style>() ?? [])
             {
                 var run = style.StyleRunProperties;
                 if (run is null) continue;
@@ -1883,22 +1884,26 @@ public sealed partial class ResumeImprovementService
 
     private static void PopulatePlaceholders(WordprocessingDocument document, ParsedResume resume)
     {
-        var lines=resume.Text.Replace("\r","").Split('\n',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries).Select(Clean).Where(x=>x.Length>0).ToList();
-        var header=ExtractHeader(resume.Text,lines);
-        var values=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase)
+        var lines = resume.Text.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Clean).Where(x => x.Length > 0).ToList();
+        var header = ExtractHeader(resume.Text, lines);
+        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            ["{{NAME}}"] = header.Name, ["{{ROLE}}"] = header.Role, ["{{CONTACT}}"] = string.Join(" | ",header.ContactParts),
-            ["{{EMAIL}}"] = EmailRegex().Match(resume.Text).Value, ["{{PHONE}}"] = PhoneRegex().Match(resume.Text).Value,
-            ["{{LINKEDIN}}"] = LinkedInRegex().Match(resume.Text).Value, ["{{RESUME_CONTENT}}"] = string.Join(Environment.NewLine,lines.Where(x=>!header.SourceLines.Contains(x)))
+            ["{{NAME}}"] = header.Name,
+            ["{{ROLE}}"] = header.Role,
+            ["{{CONTACT}}"] = string.Join(" | ", header.ContactParts),
+            ["{{EMAIL}}"] = EmailRegex().Match(resume.Text).Value,
+            ["{{PHONE}}"] = PhoneRegex().Match(resume.Text).Value,
+            ["{{LINKEDIN}}"] = LinkedInRegex().Match(resume.Text).Value,
+            ["{{RESUME_CONTENT}}"] = string.Join(Environment.NewLine, lines.Where(x => !header.SourceLines.Contains(x)))
         };
-        foreach(var paragraph in document.MainDocumentPart?.Document.Descendants<Paragraph>() ?? [])
+        foreach (var paragraph in document.MainDocumentPart?.Document.Descendants<Paragraph>() ?? [])
         {
-            var combined=paragraph.InnerText; if(!values.Keys.Any(key=>combined.Contains(key,StringComparison.OrdinalIgnoreCase))) continue;
-            foreach(var value in values) combined=combined.Replace(value.Key,value.Value,StringComparison.OrdinalIgnoreCase);
-            var firstRun=paragraph.Elements<Run>().FirstOrDefault(); var runProperties=firstRun?.RunProperties?.CloneNode(true) as RunProperties;
-            paragraph.RemoveAllChildren<Run>(); var run=new Run(); if(runProperties is not null) run.Append(runProperties);
-            var segments=combined.Replace("\r","").Split('\n');
-            for(var i=0;i<segments.Length;i++) { if(i>0) run.Append(new Break()); run.Append(new Text(segments[i]){Space=SpaceProcessingModeValues.Preserve}); }
+            var combined = paragraph.InnerText; if (!values.Keys.Any(key => combined.Contains(key, StringComparison.OrdinalIgnoreCase))) continue;
+            foreach (var value in values) combined = combined.Replace(value.Key, value.Value, StringComparison.OrdinalIgnoreCase);
+            var firstRun = paragraph.Elements<Run>().FirstOrDefault(); var runProperties = firstRun?.RunProperties?.CloneNode(true) as RunProperties;
+            paragraph.RemoveAllChildren<Run>(); var run = new Run(); if (runProperties is not null) run.Append(runProperties);
+            var segments = combined.Replace("\r", "").Split('\n');
+            for (var i = 0; i < segments.Length; i++) { if (i > 0) run.Append(new Break()); run.Append(new Text(segments[i]) { Space = SpaceProcessingModeValues.Preserve }); }
             paragraph.Append(run);
         }
     }
@@ -1912,48 +1917,49 @@ public sealed partial class ResumeImprovementService
             Style("ResumeSubtitle", "Resume Subtitle", 23, Teal, true, 0, 45, 240),
             Style("ResumeContact", "Resume Contact", 18, Gray, false, 0, 70, 230),
             Style("ResumeSection", "Resume Section", 23, Navy, true, 170, 70, 240, true),
-            Style("ResumeRole", "Resume Role", 21, Navy, true, 90, 35, 240, keepNext:true),
+            Style("ResumeRole", "Resume Role", 21, Navy, true, 90, 35, 240, keepNext: true),
             Style("ResumeBullet", "Resume Bullet", 20, "243B53", false, 0, 55, 250));
         part.Styles.Save();
     }
 
-    private static Style Style(string id, string name, int halfPoints, string color, bool bold, int before, int after, int line, bool caps=false, bool keepNext=false)
+    private static Style Style(string id, string name, int halfPoints, string color, bool bold, int before, int after, int line, bool caps = false, bool keepNext = false)
     {
-        var run = new StyleRunProperties(new RunFonts { Ascii="Aptos", HighAnsi="Aptos" }, new FontSize { Val=halfPoints.ToString() }, new Color { Val=color });
+        var run = new StyleRunProperties(new RunFonts { Ascii = "Aptos", HighAnsi = "Aptos" }, new FontSize { Val = halfPoints.ToString() }, new Color { Val = color });
         if (bold) run.Append(new Bold()); if (caps) run.Append(new Caps());
-        var paragraph = new StyleParagraphProperties(new SpacingBetweenLines { Before=before.ToString(), After=after.ToString(), Line=line.ToString(), LineRule=LineSpacingRuleValues.Auto });
+        var paragraph = new StyleParagraphProperties(new SpacingBetweenLines { Before = before.ToString(), After = after.ToString(), Line = line.ToString(), LineRule = LineSpacingRuleValues.Auto });
         if (keepNext) paragraph.Append(new KeepNext());
-        return new Style(new StyleName { Val=name }, new BasedOn { Val="Normal" }, new NextParagraphStyle { Val="ResumeBody" }, paragraph, run) { Type=StyleValues.Paragraph, StyleId=id, CustomStyle=true };
+        return new Style(new StyleName { Val = name }, new BasedOn { Val = "Normal" }, new NextParagraphStyle { Val = "ResumeBody" }, paragraph, run) { Type = StyleValues.Paragraph, StyleId = id, CustomStyle = true };
     }
 
     private static void AddNumbering(MainDocumentPart main)
     {
         var part = main.AddNewPart<NumberingDefinitionsPart>();
-        var level = new Level(new NumberingFormat { Val=NumberFormatValues.Bullet }, new LevelText { Val="•" }, new LevelJustification { Val=LevelJustificationValues.Left },
-            new PreviousParagraphProperties(new Indentation { Left="420", Hanging="220" }), new NumberingSymbolRunProperties(new RunFonts { Ascii="Aptos", HighAnsi="Aptos" }, new Color { Val=Teal })) { LevelIndex=0 };
-        part.Numbering = new Numbering(new AbstractNum(level) { AbstractNumberId=1 }, new NumberingInstance(new AbstractNumId { Val=1 }) { NumberID=1 });
+        var level = new Level(new NumberingFormat { Val = NumberFormatValues.Bullet }, new LevelText { Val = "•" }, new LevelJustification { Val = LevelJustificationValues.Left },
+            new PreviousParagraphProperties(new Indentation { Left = "420", Hanging = "220" }), new NumberingSymbolRunProperties(new RunFonts { Ascii = "Aptos", HighAnsi = "Aptos" }, new Color { Val = Teal }))
+        { LevelIndex = 0 };
+        part.Numbering = new Numbering(new AbstractNum(level) { AbstractNumberId = 1 }, new NumberingInstance(new AbstractNumId { Val = 1 }) { NumberID = 1 });
         part.Numbering.Save();
     }
 
-    private static Paragraph Paragraph(string text, string style, JustificationValues? alignment=null, bool numbering=false)
+    private static Paragraph Paragraph(string text, string style, JustificationValues? alignment = null, bool numbering = false)
     {
-        var properties = new ParagraphProperties(new ParagraphStyleId { Val=style });
-        if (alignment is not null) properties.Append(new Justification { Val=alignment });
-        if (numbering) properties.Append(new NumberingProperties(new NumberingLevelReference { Val=0 }, new NumberingId { Val=1 }));
-        return new Paragraph(properties, new Run(new Text(text) { Space=SpaceProcessingModeValues.Preserve }));
+        var properties = new ParagraphProperties(new ParagraphStyleId { Val = style });
+        if (alignment is not null) properties.Append(new Justification { Val = alignment });
+        if (numbering) properties.Append(new NumberingProperties(new NumberingLevelReference { Val = 0 }, new NumberingId { Val = 1 }));
+        return new Paragraph(properties, new Run(new Text(text) { Space = SpaceProcessingModeValues.Preserve }));
     }
 
     private static Paragraph LabelParagraph(string label, string detail)
     {
         var paragraph = Paragraph("", "ResumeBody"); paragraph.RemoveAllChildren<Run>();
-        paragraph.Append(new Run(new RunProperties(new Bold(), new Color { Val=Navy }), new Text(label + ": ")), new Run(new Text(detail)));
+        paragraph.Append(new Run(new RunProperties(new Bold(), new Color { Val = Navy }), new Text(label + ": ")), new Run(new Text(detail)));
         return paragraph;
     }
 
     private static Paragraph AccentRule()
     {
-        var borders = new ParagraphBorders(new BottomBorder { Val=BorderValues.Single, Color=Teal, Size=14, Space=6 });
-        return new Paragraph(new ParagraphProperties(new SpacingBetweenLines { After="80" }, borders), new Run(new Text(" ")));
+        var borders = new ParagraphBorders(new BottomBorder { Val = BorderValues.Single, Color = Teal, Size = 14, Space = 6 });
+        return new Paragraph(new ParagraphProperties(new SpacingBetweenLines { After = "80" }, borders), new Run(new Text(" ")));
     }
 
     private static HeaderInfo ExtractHeader(string text, IReadOnlyList<string> lines)
@@ -2012,17 +2018,17 @@ public sealed partial class ResumeImprovementService
     private static bool TrySplitHeading(string text, out string heading, out string content)
     {
         foreach (var known in KnownHeadings.OrderByDescending(x => x.Length))
-            if (text.StartsWith(known + " ", StringComparison.OrdinalIgnoreCase)) { heading=known; content=text[(known.Length+1)..].Trim(); return true; }
-        heading=content=""; return false;
+            if (text.StartsWith(known + " ", StringComparison.OrdinalIgnoreCase)) { heading = known; content = text[(known.Length + 1)..].Trim(); return true; }
+        heading = content = ""; return false;
     }
     private static bool IsRoleLine(string text) => text.StartsWith('#') || (text.Contains('|') && DateRegex().IsMatch(text));
     private static bool ShouldBullet(string text) => text.Length > 55 || text.StartsWith('-') || text.StartsWith('•');
-    private static bool IsLabelLine(string text, out string label, out string detail) { var index=text.IndexOf(':'); if (index is > 1 and < 32) { label=text[..index].Trim(); detail=text[(index+1)..].Trim(); return detail.Length>0; } label=detail=""; return false; }
+    private static bool IsLabelLine(string text, out string label, out string detail) { var index = text.IndexOf(':'); if (index is > 1 and < 32) { label = text[..index].Trim(); detail = text[(index + 1)..].Trim(); return detail.Length > 0; } label = detail = ""; return false; }
 
     private static string Clean(string value)
     {
-        var text=WhitespaceRegex().Replace(value," ").Trim(); foreach(var correction in Corrections) text=Regex.Replace(text,$@"\b{Regex.Escape(correction.Key)}\b",correction.Value,RegexOptions.IgnoreCase);
-        return LeadingPronounRegex().Replace(text,"").Trim(' ','-','•');
+        var text = WhitespaceRegex().Replace(value, " ").Trim(); foreach (var correction in Corrections) text = Regex.Replace(text, $@"\b{Regex.Escape(correction.Key)}\b", correction.Value, RegexOptions.IgnoreCase);
+        return LeadingPronounRegex().Replace(text, "").Trim(' ', '-', '•');
     }
 
     private sealed record HeaderInfo(string Name, string Role, List<string> ContactParts, HashSet<string> SourceLines);

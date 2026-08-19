@@ -2227,3 +2227,15 @@ ins.adsbygoogle:empty {
     margin: 0 !important;
     padding: 0 !important;
 }
+.secondary-button {
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    color: #495057;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    .secondary-button:hover {
+        background-color: #e9ecef;
+    }
