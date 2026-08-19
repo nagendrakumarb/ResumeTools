@@ -1,4 +1,15 @@
 @inherits LayoutComponentBase
+
 <NavMenu />
-<div class="page-shell">@Body</div>
-<footer><span>&copy; @DateTime.UtcNow.Year Professional Hub</span><span><a href="/about.html">About</a> &middot; <a href="/support.html">Support</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="/terms.html">Terms</a></span></footer>
+<div class="page-shell">
+    @Body
+</div>
+<footer>
+    <span>&copy; @DateTime.UtcNow.Year Professional Hub</span>
+    <span>
+        <a href="/about.html">About</a> &middot;
+        <a href="/support.html">Support</a> &middot;
+        <a href="/privacy.html">Privacy Policy</a> &middot;
+        <a href="/terms.html">Terms</a>
+    </span>
+</footer>

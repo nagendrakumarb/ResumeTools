@@ -3,7 +3,7 @@
   "short_name": "Resume Match",
   "description": "Private, offline resume and job-description matching.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "index.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#f5f7fa",
@@ -13,12 +13,14 @@
     {
       "src": "icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     }
   ]
 }
