@@ -1,0 +1,25 @@
+﻿@inject IJSRuntime JSRuntime
+
+<div class="my-3 text-center">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="@PublisherId"
+         data-ad-slot="@AdSlot"
+         data-ad-format="@AdFormat"
+         data-full-width-responsive="@FullWidthResponsive.ToString().ToLower()"></ins>
+</div>
+
+@code {
+    [Parameter] public string PublisherId { get; set; } = "ca-pub-8487728962349258";
+    [Parameter] public string AdSlot { get; set; } = "1234567890"; // Pass custom slot ID if needed
+    [Parameter] public string AdFormat { get; set; } = "auto";
+    [Parameter] public bool FullWidthResponsive { get; set; } = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("professionalHub.adsense.push");
+        }
+    }
+}

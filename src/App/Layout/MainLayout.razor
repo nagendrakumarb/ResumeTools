@@ -1,9 +1,15 @@
+@using ProfessionalHub.ResumeTools.Shared
 @inherits LayoutComponentBase
 
 <NavMenu />
+
 <div class="page-shell">
     @Body
+
+    <!-- Global AdSense Banner Placement -->
+    <AdBanner />
 </div>
+
 <footer>
     <span>&copy; @DateTime.UtcNow.Year Professional Hub</span>
     <span>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T03:28:57.0267094+00:00",
+  "generatedAt": "2026-08-19T04:01:59.7575604+00:00",
   "provider": "Remote OK, Remotive, We Work Remotely, Apify",
   "providers": [
     "Remote OK",
@@ -240,7 +240,7 @@
       "status": "failed",
       "remainingCredits": 200,
       "jobsReturned": 0,
-      "note": "TheirStack returned 402: {\u0022request_id\u0022:49416310,\u0022error\u0022:{\u0022code\u0022:\u0022E-007\u0022,\u0022title\u0022:\u0022Not enough credits to perform this action\u0022,\u0022description\u0022:\u0022You need to upgrade your plan to perform this action. Required: 13 API credits. You currently have 12 API credits. You need 13 more API credits.\u0022}}"
+      "note": "TheirStack returned 402: {\u0022request_id\u0022:49421833,\u0022error\u0022:{\u0022code\u0022:\u0022E-007\u0022,\u0022title\u0022:\u0022Not enough credits to perform this action\u0022,\u0022description\u0022:\u0022You need to upgrade your plan to perform this action. Required: 13 API credits. You currently have 12 API credits. You need 13 more API credits.\u0022}}"
     }
   ],
   "jobs": [
@@ -1983,16 +1983,6 @@
       "url": "https://weworkremotely.com/remote-jobs/coinbase-machine-learning-engineer-cx-intelligence",
       "postedAt": "Wed, 22 Jul 2026 07:04:06 \u002B0000",
       "source": "We Work Remotely"
-    },
-    {
-      "id": "4443388597",
-      "title": ".Net Developer",
-      "company": "Swastika Investmart Limited",
-      "location": "Indore, Madhya Pradesh, India",
-      "description": "Net DeveloperLocationIndoreExperience3 to 8 YearsQualificationAny Graduate or Post GratudeJob DescriptionWe are developing an \u00E2\u0080\u0098investment universe\u00E2\u0080\u0099 catering to large sets of Indian audience. This includes stock investment apps, softwares, algorithmic trading infrastructure, APIs for 3rd party development and loads of automations. We have an in-house UX - UI team which enables us to create user-centric products.The plan is to make new revolutionary fintech products.Here are some of the products that we plan to develop and iterate over the next 3 years - Stock trading mobile and web app Insurance mobile and web app Mutual fund investment mobile and web app Get Loan mobile and web app AlgoTrading mobile and web interfacesAs a backend software developer, you would be required to develop APIs to be used by front-end and mobile app developers and manage SQL database.You would also be a part of the product ideation and strategy along with the UX team.Job ResponsibilitiesStrategy \u00E2\u0080\u0093 Ideation \u00E2\u0080\u0093 Planning\u00E2\u0080\u0093 Development \u00E2\u0080\u0093 Review \u00E2\u0080\u0093 Improvements Collaborating with the UX strategy team to come out with ideas on new offerings Automations in the existing backend operations Developing the required code following the best data structure practices Analyse the performance of our products and improve our offerings Planning the architecture and software developmentDesired Candidate Profile B.E./B.Tech/M.Tech or equivalent Computer Science degree from a reputed institute Well versed with SQL, mySQL, ASP.NET. Working knowledge of .NET Core would be appreciated Sound with logic, data structure algorithms and puzzle solving capabilitiesJob LocationIndorePerks Competitive compensation Flexible working environment in a professionally run big organization Job stability Lots of learning for junior developers\u2219 Collaborate with cross-functional teams to analyze, design, develop, test, and deployNET applications and software solutions.\u2219 Utilize your strong experience and knowledge of Entity Framework to design andimplement efficient data access and persistence layers.\u2219 Apply Test-Driven Development (TDD) principles to ensure high-quality code andmaintainable software systems.\u2219 Containerize applications using Docker or similar containerization technologies forimproved scalability, portability, and deployment.\u2219 Work closely with database administrators and migration specialists to migratestored procedures to ORM solutions like Entity Framework.\u2219 Implement caching mechanisms to optimize application performance and reducedatabase load.\u2219 Design and develop scalable solutions that can handle increasing user loads andmaintain high performance under heavy traffic.\u2219 Collaborate with DevOps teams to ensure smooth deployment, monitoring, andmanagement of applications in production environments.\u2219 Stay up-to-date with the latest industry trends, best practices, and technologiesrelated to .NET development and relevant domains.\u200DApply nowxNet DeveloperUpload FileResumeUploading...fileuploaded.jpgUpload failed. Max size for files is 10 MB.Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.Get a Call BackPlease enter valid mobile number.Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.",
-      "url": "https://in.linkedin.com/jobs/view/net-developer-at-swastika-investmart-limited-4443388597",
-      "postedAt": "2026-07-21",
-      "source": "Apify"
     },
     {
       "id": "4438303277",

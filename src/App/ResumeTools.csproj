@@ -28,11 +28,8 @@
     <ProjectReference Include="..\ProfessionalHub.AI.PortableRuntime\ProfessionalHub.AI.PortableRuntime.csproj" />
   </ItemGroup>
 
-  <Target Name="GenerateLocalJobCatalog"
-          BeforeTargets="PrepareForBuild"
-          Condition="'$(DesignTimeBuild)' != 'true' and Exists('$(MSBuildProjectDirectory)\job-providers.json') and '$(SkipJobCatalogBuild)' != 'true'">
-    <Exec WorkingDirectory="$(MSBuildProjectDirectory)\..\.."
-          Command="dotnet run --project tools\JobCatalogBuilder\JobCatalogBuilder.csproj -c $(Configuration) --no-launch-profile" />
+  <Target Name="GenerateLocalJobCatalog" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true' and Exists('$(MSBuildProjectDirectory)\job-providers.json') and '$(SkipJobCatalogBuild)' != 'true'">
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)\..\.." Command="dotnet run --project tools\JobCatalogBuilder\JobCatalogBuilder.csproj -c $(Configuration) --no-launch-profile" />
   </Target>
 
 </Project>
