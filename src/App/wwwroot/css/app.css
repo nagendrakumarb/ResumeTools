@@ -2239,3 +2239,37 @@ ins.adsbygoogle:empty {
     .secondary-button:hover {
         background-color: #e9ecef;
     }
+/* Main Step 2 Heading prominence */
+.primary-action-heading {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+/* Larger, distinct look for the instruction subtext */
+.section-prominent-subtext {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 0.25rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Enhanced "OR PASTE THE DESCRIPTION" separator */
+.prominent-divider {
+    margin: 1.25rem 0 0.75rem 0;
+    text-align: center;
+    border-bottom: 1px solid #d1d5db;
+    position: relative;
+}
+
+.prominent-or-text {
+    background-color: #ffffff; /* Matches your card background */
+    padding: 0 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4b5563;
+    letter-spacing: 0.05em;
+    position: relative;
+    top: -0.6rem;
+}

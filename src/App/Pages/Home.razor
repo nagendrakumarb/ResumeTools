@@ -209,9 +209,20 @@
                 </div>
             }
         </details>
-        <label class="field-label" for="jobUrl">2. Import the job posting</label>
-        <div class="url-row"><input id="jobUrl" type="url" @bind="jobUrl" @bind:event="oninput" placeholder="https://company.com/jobs/role" /><button @onclick="ImportJobAsync" disabled="@(string.IsNullOrWhiteSpace(jobUrl) || isBusy)">Import URL</button></div>
-        <div class="or-divider"><span>or paste the description</span></div>
+        <div class="job-input-section-header">
+            <label class="field-label primary-action-heading" for="jobUrl">2. Import the job posting</label>
+            <p class="section-prominent-subtext">Choose your preferred method to provide the job details below:</p>
+        </div>
+
+        <div class="url-row">
+            <input id="jobUrl" type="url" @bind="jobUrl" @bind:event="oninput" placeholder="https://company.com/jobs/role" />
+            <button @onclick="ImportJobAsync" disabled="@(string.IsNullOrWhiteSpace(jobUrl) || isBusy)">Import URL</button>
+        </div>
+
+        <div class="or-divider prominent-divider">
+            <span class="prominent-or-text">OR PASTE THE DESCRIPTION</span>
+        </div>
+
         <textarea id="jobDescription" @bind="jobDescription" @bind:event="oninput" rows="8" placeholder="Paste the job description here..."></textarea>
         <button class="score-button" @onclick="AnalyzeMatchAsync" disabled="@(!CanMatch || isBusy)">@(isBusy ? "Analyzing…" : "Calculate job match")</button>
         @if (!CanMatch && string.IsNullOrWhiteSpace(error))
