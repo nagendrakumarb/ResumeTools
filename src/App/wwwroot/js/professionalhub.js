@@ -3,7 +3,7 @@ window.professionalHub = {
     // Google AdSense Handler
     // ---------------------------------------------------------------------------
     adsense: {
-        clientPublisherId: "ca-pub-8487728962349258", // <-- Replace with your Publisher ID
+        clientPublisherId: "ca-pub-8487728962349258",
 
         /**
          * Dynamically injects the Google AdSense library into the document head
@@ -33,11 +33,19 @@ window.professionalHub = {
         },
 
         /**
-         * Triggers AdSense to render active <ins class="adsbygoogle"> tags on the page.
+         * Triggers AdSense to render active <ins class="adsbygoogle"> tags.
+         * Only targets elements that have NOT been initialized yet to prevent 400 errors.
          */
         push: function () {
             try {
-                (window.adsbygoogle = window.adsbygoogle || []).push({});
+                // Select only <ins> tags that Google hasn't parsed or filled yet
+                const unfilledAds = document.querySelectorAll(
+                    'ins.adsbygoogle:not([data-adsbygoogle-status]):not([data-ad-status])'
+                );
+
+                unfilledAds.forEach(() => {
+                    (window.adsbygoogle = window.adsbygoogle || []).push({});
+                });
             } catch (error) {
                 console.warn("AdSense push error or ad blocker detected:", error);
             }

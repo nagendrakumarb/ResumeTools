@@ -19,7 +19,17 @@
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("professionalHub.adsense.push");
+            // Brief yield gives Blazor time to commit the <ins> tag to the browser DOM
+            await Task.Yield();
+
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("professionalHub.adsense.push");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"AdSense push error: {ex.Message}");
+            }
         }
     }
 }
