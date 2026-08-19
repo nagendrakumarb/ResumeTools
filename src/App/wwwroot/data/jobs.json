@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T06:19:12.4024172+00:00",
+  "generatedAt": "2026-08-19T06:38:33.6228274+00:00",
   "provider": "Remote OK, Remotive, We Work Remotely, Apify",
   "providers": [
     "Remote OK",
@@ -240,7 +240,7 @@
       "status": "failed",
       "remainingCredits": 200,
       "jobsReturned": 0,
-      "note": "TheirStack returned 402: {\u0022request_id\u0022:49445455,\u0022error\u0022:{\u0022code\u0022:\u0022E-007\u0022,\u0022title\u0022:\u0022Not enough credits to perform this action\u0022,\u0022description\u0022:\u0022You need to upgrade your plan to perform this action. Required: 13 API credits. You currently have 12 API credits. You need 13 more API credits.\u0022}}"
+      "note": "TheirStack returned 402: {\u0022request_id\u0022:49449104,\u0022error\u0022:{\u0022code\u0022:\u0022E-007\u0022,\u0022title\u0022:\u0022Not enough credits to perform this action\u0022,\u0022description\u0022:\u0022You need to upgrade your plan to perform this action. Required: 13 API credits. You currently have 12 API credits. You need 13 more API credits.\u0022}}"
     }
   ],
   "jobs": [
