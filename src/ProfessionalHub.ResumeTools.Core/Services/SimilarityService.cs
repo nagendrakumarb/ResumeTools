@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using ProfessionalHub.ResumeTools.Models;
 
@@ -37,19 +40,38 @@ public sealed partial class SimilarityService
         "Full Stack", "Scalability", "Reliability", "High Availability"
     ];
 
-    public MatchResult Compare(string resume, string jobDescription)
+    public static MatchResult Compare(ParsedResume resume, string jobDescription)
     {
-        var jobTerms = ExtractRequirements(JobTextSanitizer.RelevantDescription(jobDescription));
+        ArgumentNullException.ThrowIfNull(resume);
+        return Compare(resume.Text ?? string.Empty, jobDescription ?? string.Empty);
+    }
+
+    public static IReadOnlyList<string> CalculateMatches(ParsedResume resume, string jobText) =>
+        Compare(resume, jobText).MatchedTerms;
+
+    public static double ComputeScore(IReadOnlyList<string> matches) =>
+        matches == null ? 0.0 : Math.Min(100.0, matches.Count * 5.0);
+
+    public static MatchResult Compare(string resume, string jobDescription)
+    {
+        resume ??= string.Empty;
+        jobDescription ??= string.Empty;
+
+        var cleanedJobText = JobTextSanitizer.RelevantDescription(jobDescription);
+        var jobTerms = ExtractRequirements(cleanedJobText);
+
         if (jobTerms.Count == 0)
             throw new InvalidOperationException("The job description does not contain enough recognizable technical or professional requirements.");
 
         var matched = jobTerms.Where(term => ContainsRequirement(resume, term)).ToArray();
         var missing = jobTerms.Where(term => !ContainsRequirement(resume, term)).ToArray();
+
         var termCoverage = matched.Length / (double)jobTerms.Count;
         var requiredContextLines = Math.Min(4, Math.Max(1, (int)Math.Ceiling(matched.Length / 5d)));
         var contextLines = CountContextLines(resume, matched);
         var distributionCoverage = Math.Min(1d, contextLines / (double)requiredContextLines);
         var score = Math.Round(termCoverage * (0.85d + 0.15d * distributionCoverage) * 100d, 1);
+
         var summary = score >= 95
             ? "Excellent contextual requirement coverage. Verify that every listed skill is truthful and supported by your experience."
             : score >= 75
@@ -59,17 +81,22 @@ public sealed partial class SimilarityService
                 : score >= 50
                     ? "Partial requirement coverage. Tailor the skills and achievement evidence to this role."
                     : "Low requirement coverage. Add only truthful job requirements and supporting experience before applying.";
+
         return new MatchResult(score, matched.Take(20).ToArray(), missing.Take(20).ToArray(), summary);
     }
 
     private static int CountContextLines(string resume, IReadOnlyCollection<string> matchedTerms)
     {
+        if (string.IsNullOrWhiteSpace(resume) || matchedTerms.Count == 0) return 0;
+
         var lines = resume.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return lines.Count(line => matchedTerms.Any(term => ContainsRequirement(line, term)));
     }
 
     private static List<string> ExtractRequirements(string text)
     {
+        if (string.IsNullOrWhiteSpace(text)) return [];
+
         var recognized = RequirementVocabulary
             .Where(term => ContainsRequirement(text, term))
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -77,6 +104,7 @@ public sealed partial class SimilarityService
             .ThenBy(term => term)
             .Take(20)
             .ToList();
+
         if (recognized.Count >= 5) return recognized;
 
         var fallback = WordRegex().Matches(text)
@@ -91,20 +119,27 @@ public sealed partial class SimilarityService
             .Select(group => ToDisplayTerm(group.Key))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(20 - recognized.Count);
+
         recognized.AddRange(fallback);
         return recognized.Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList();
     }
 
     private static bool ContainsRequirement(string text, string term)
     {
+        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(term)) return false;
+
         var pattern = $@"(?<![\p{{L}}\p{{N}}]){Regex.Escape(term)}(?![\p{{L}}\p{{N}}])";
         return Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 
-    private static string ToDisplayTerm(string value) =>
-        value.Length <= 4 && value.All(character => !char.IsLetter(character) || char.IsUpper(character))
+    private static string ToDisplayTerm(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+
+        return value.Length <= 4 && value.All(character => !char.IsLetter(character) || char.IsUpper(character))
             ? value
             : char.ToUpperInvariant(value[0]) + value[1..].ToLowerInvariant();
+    }
 
     [GeneratedRegex(@"[\p{L}\p{N}+#.]+", RegexOptions.CultureInvariant)]
     private static partial Regex WordRegex();

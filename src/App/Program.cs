@@ -17,6 +17,7 @@ builder.Services.AddScoped<JobSearchService>();
 builder.Services.AddScoped<JobApplicationStore>();
 builder.Services.AddScoped<ResumeImprovementService>();
 builder.Services.AddScoped<AnalysisHistoryService>();
+builder.Services.AddScoped<ResumeIntegrityService>();
 
 // Register your grammar and spell correction service here
 builder.Services.AddScoped<ResumeCorrectionService>();

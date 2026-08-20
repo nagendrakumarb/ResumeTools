@@ -7,3 +7,4 @@ public sealed class JobTailoringOptions
     public IReadOnlyDictionary<string, string> EvidenceStatements { get; set; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }
+

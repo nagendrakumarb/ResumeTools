@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,17 +32,23 @@ public sealed partial class ResumeIntegrityService
 
     public ResumeFactInventory CreateSourceInventory(ParsedResume resume)
     {
+        ArgumentNullException.ThrowIfNull(resume);
+
         var blocks = resume.FileType.Equals("DOCX", StringComparison.OrdinalIgnoreCase)
             ? ReadDocxBlocks(resume.OriginalBytes)
             : ReadTextBlocks(resume.Text);
+
         return BuildInventory(blocks);
     }
 
-    public ResumeFactInventory CreateGeneratedInventory(byte[] generatedDocx) =>
+    public ResumeFactInventory CreateGeneratedInventory(byte[]? generatedDocx) =>
         BuildInventory(ReadDocxBlocks(generatedDocx));
 
     public ResumeIntegrityResult Compare(ResumeFactInventory source, ResumeFactInventory generated)
     {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(generated);
+
         var generatedValues = generated.Facts.Select(f => Normalize(f.Value)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var sourceValues = source.Facts.Select(f => Normalize(f.Value)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var preserved = source.Facts.Where(f => generatedValues.Contains(Normalize(f.Value))).ToList();
@@ -55,13 +65,16 @@ public sealed partial class ResumeIntegrityService
             .Select(s => s.Kind)
             .Distinct()
             .ToList();
+
         return new ResumeIntegrityResult(preserved, missing, unsupported, missingSections);
     }
 
     public ResumeFixResult Audit(ParsedResume source, byte[] generatedBytes, IReadOnlyList<ResumeFixOutcome> existingOutcomes)
     {
-        if (generatedBytes.Length == 0)
-            return new ResumeFixResult(generatedBytes, existingOutcomes, ResumeGenerationStatus.GenerationFailed);
+        existingOutcomes ??= Array.Empty<ResumeFixOutcome>();
+
+        if (generatedBytes == null || generatedBytes.Length == 0)
+            return new ResumeFixResult(generatedBytes ?? Array.Empty<byte>(), existingOutcomes, ResumeGenerationStatus.GenerationFailed);
 
         try
         {
@@ -73,6 +86,7 @@ public sealed partial class ResumeIntegrityService
                 : integrity.UnsupportedFacts.Count > 0 || integrity.MissingSections.Count > 0
                     ? ResumeGenerationStatus.ManualCorrectionRequired
                     : ResumeGenerationStatus.ReviewRecommended;
+
             return new ResumeFixResult(generatedBytes, outcomes, status, integrity);
         }
         catch (Exception ex) when (ex is OpenXmlPackageException or InvalidDataException)
@@ -81,6 +95,7 @@ public sealed partial class ResumeIntegrityService
                 "Document integrity audit",
                 "Manual action required",
                 "The generated document remains downloadable, but its fact inventory could not be read: " + ex.Message)).ToList();
+
             return new ResumeFixResult(generatedBytes, outcomes, ResumeGenerationStatus.ManualCorrectionRequired);
         }
     }
@@ -98,6 +113,7 @@ public sealed partial class ResumeIntegrityService
             details.Add($"Remove or verify {result.UnsupportedFacts.Count} unsupported identity fact(s): {Preview(result.UnsupportedFacts)}");
         if (result.MissingSections.Count > 0)
             details.Add("Restore missing section(s): " + string.Join(", ", result.MissingSections));
+
         details.Add("The document is still available to download; use the unchanged original and this audit when correcting it manually.");
         return new ResumeFixOutcome("Document integrity audit", "Manual action required", string.Join(" ", details));
     }
@@ -138,6 +154,7 @@ public sealed partial class ResumeIntegrityService
         foreach (var section in sections)
             foreach (var block in section.Blocks)
                 ExtractFacts(block, section.Kind, facts);
+
         return new ResumeFactInventory(sections, facts.DistinctBy(f => f.Id).ToList());
     }
 
@@ -145,7 +162,11 @@ public sealed partial class ResumeIntegrityService
     {
         AddMatches(EmailRegex(), "Email", block, section, facts);
         AddMatches(UrlRegex(), "Url", block, section, facts);
-        AddMatches(PhoneRegex(), "Phone", block, section, facts, m => new string(m.Value.Where(char.IsDigit).ToArray()));
+        AddMatches(PhoneRegex(), "Phone", block, section, facts, m =>
+        {
+            var digits = new string(m.Value.Where(char.IsDigit).ToArray());
+            return digits.Length >= 7 ? digits : string.Empty;
+        });
         AddMatches(DateRegex(), "Date", block, section, facts);
         AddMatches(MetricRegex(), "Metric", block, section, facts);
     }
@@ -162,15 +183,22 @@ public sealed partial class ResumeIntegrityService
         }
     }
 
-    private static IReadOnlyList<string> ReadTextBlocks(string text) =>
-        text.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    private static IReadOnlyList<string> ReadTextBlocks(string? text) =>
+        string.IsNullOrWhiteSpace(text)
+            ? Array.Empty<string>()
+            : text.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-    private static IReadOnlyList<string> ReadDocxBlocks(byte[] bytes)
+    private static IReadOnlyList<string> ReadDocxBlocks(byte[]? bytes)
     {
+        if (bytes == null || bytes.Length == 0)
+            return Array.Empty<string>();
+
         using var stream = new MemoryStream(bytes, writable: false);
         using var document = WordprocessingDocument.Open(stream, false);
         var body = document.MainDocumentPart?.Document.Body;
-        if (body is null) return [];
+
+        if (body is null) return Array.Empty<string>();
+
         return body.Descendants<Paragraph>()
             .Select(p => CollapseWhitespace(p.InnerText))
             .Where(t => t.Length > 0)
@@ -181,11 +209,13 @@ public sealed partial class ResumeIntegrityService
     {
         var normalized = Normalize(value.TrimEnd(':'));
         foreach (var pair in HeadingAliases)
+        {
             if (pair.Value.Any(alias => normalized.Equals(Normalize(alias), StringComparison.OrdinalIgnoreCase)))
             {
                 kind = pair.Key;
                 return true;
             }
+        }
         kind = ResumeSectionKind.Other;
         return false;
     }
@@ -196,16 +226,22 @@ public sealed partial class ResumeIntegrityService
 
     [GeneratedRegex(@"\b[\w.%+-]+@[\w.-]+\.[A-Za-z]{2,}\b", RegexOptions.CultureInvariant)]
     private static partial Regex EmailRegex();
+
     [GeneratedRegex(@"(?:https?://|www\.)[^\s|;,]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex UrlRegex();
+
     [GeneratedRegex(@"(?:\+?\d[\d\s().-]{7,}\d)", RegexOptions.CultureInvariant)]
     private static partial Regex PhoneRegex();
+
     [GeneratedRegex(@"\b(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+)?(?:19|20)\d{2}\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex DateRegex();
+
     [GeneratedRegex(@"(?<![\w.])(?:[$₹€£]\s*)?\d+(?:[.,]\d+)?\s*(?:%|k|m|bn|million|billion|users?|customers?|employees?|hours?|days?|months?|years?)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex MetricRegex();
+
     [GeneratedRegex(@"[^\p{L}\p{N}+#]+", RegexOptions.CultureInvariant)]
     private static partial Regex NonAlphaNumericRegex();
+
     [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
     private static partial Regex WhitespaceRegex();
 }

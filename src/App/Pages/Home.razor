@@ -1,7 +1,6 @@
 @page "/"
 @using System.Text.Json
 @inject ResumeParserService Parser
-@inject SimilarityService Similarity
 @inject AtsCompatibilityService Ats
 @inject JobDescriptionService JobReader
 @inject JobSearchService JobSearch
@@ -243,7 +242,16 @@
     }
     else if (atsResult is not null)
     {
-        <div class="overall-result @GradeClass(atsResult.Score)"><div class="score-ring">@atsResult.Score.ToString("0")<small>%</small></div><div class="grade-badge">Grade @atsResult.Grade</div></div><h2>@ScoreHeading(atsResult.Score)</h2><p>@atsResult.Summary</p>
+      <div class="overall-result @GradeClass(atsResult.Score)">
+        <div class="score-ring">
+            <span style="display: inline-flex; align-items: baseline; justify-content: center; width: 100%;">
+                @atsResult.Score.ToString("0")<small style="font-size: 0.5em; margin-left: 2px;">%</small>
+            </span>
+        </div>
+        <div class="grade-badge">Grade @atsResult.Grade</div>
+    </div>
+       
+        <h2>@ScoreHeading(atsResult.Score)</h2><p>@atsResult.Summary</p>
         <div class="quality-meter" aria-label="Resume quality: @QualityBand(atsResult.Score)">
             <i style="left:calc(@(atsResult.Score)% - 8px)"></i><div class="quality-track"></div>
             <div class="quality-labels"><span>Low</span><span>Medium</span><span>High</span><span>Excellent</span></div>
@@ -344,12 +352,42 @@
 }
         else if (matchResult is not null)
 {
-    <div class="score-ring @ScoreClass(matchResult.Score)">@matchResult.Score.ToString("0")<small>%</small></div><h2>@ScoreHeading(matchResult.Score)</h2><p>@matchResult.Summary</p>
+    <div class="score-ring @ScoreClass(matchResult.Score)">
+        <span style="display: inline-flex; align-items: baseline; justify-content: center; width: 100%;">
+            @matchResult.Score.ToString("0")<small style="font-size: 0.5em; margin-left: 2px;">%</small>
+        </span>
+    </div>
+    <h2>@ScoreHeading(matchResult.Score)</h2><p>@matchResult.Summary</p>
+    
     @if (CanOpenJobUrl)
     {
         <a class="apply-job-link" href="@jobUrl" target="_blank" rel="noopener noreferrer">Open application page <span aria-hidden="true">↗</span></a>
     }
     <div class="term-columns"><div><h3 class="term-heading term-heading--strong">Strong matches</h3><TermList Terms="matchResult.MatchedTerms" EmptyText="No strong terms yet" Variant="strong" /></div><div><h3 class="term-heading term-heading--missing">Missing terms</h3><TermList Terms="FilteredMissingTerms" EmptyText="No notable gaps" Variant="missing" /></div></div>
+
+    @if (matchResult.Score < 100)
+    {
+        <div class="fix-report" style="margin-top: 1.5rem; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; color: #b45309;">
+                <strong>How to reach 100%:</strong>
+            </div>
+            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.9rem; color: #4b5563;">
+                @if (!FilteredMissingTerms.Any())
+                {
+                    <li>
+                        <strong>Keyword Concentration:</strong> All matched skills are present, but concentrated in too few sections. Spread these terms across your Work Experience bullet points alongside measurable achievements.
+                    </li>
+                }
+                else
+                {
+                    <li>
+                        <strong>Add Missing Skills:</strong> Incorporate truthful experience for:
+                        <strong style="color: #dc2626;">@string.Join(", ", FilteredMissingTerms)</strong>.
+                    </li>
+                }
+            </ul>
+        </div>
+    }
 
     @if (showJobMatchImprovementsPanel)
     {
@@ -893,7 +931,7 @@
         await InvokeAsync(StateHasChanged); await Task.Delay(150);
         try
         {
-            matchResult = Similarity.Compare(resume!.Text, jobDescription);
+            matchResult = SimilarityService.Compare(resume!.Text, jobDescription);
             selectedMatchTerms = FilteredMissingTerms.ToHashSet(StringComparer.OrdinalIgnoreCase);
             matchTermEvidence.Clear();
             confirmedMatchTermEvidence.Clear();
@@ -1104,7 +1142,7 @@
             var outputName = $"Job-Tailored-{Path.GetFileNameWithoutExtension(resume.OriginalFileName)}.docx";
             lastTailoredResumeBytes = result.Bytes;
             lastTailoredResumeFileName = outputName;
-            matchResult = Similarity.Compare(verifiedTailoredResume.Text, jobDescription);
+            matchResult = SimilarityService.Compare(verifiedTailoredResume.Text, jobDescription);
 
             var downloaded = await JS.InvokeAsync<bool>("professionalHub.files.downloadBase64", outputName,
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Convert.ToBase64String(result.Bytes));
